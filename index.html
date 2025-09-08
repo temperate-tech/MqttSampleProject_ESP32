@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHT40 IoT Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .status.connected {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .status.disconnected {
+            background: #f44336;
+            color: white;
+        }
+        
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .card-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .temperature .card-value {
+            color: #ff6b6b;
+        }
+        
+        .humidity .card-value {
+            color: #4ecdc4;
+        }
+        
+        .card-unit {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 30px;
+        }
+        
+        .chart-title {
+            text-align: center;
+            font-size: 1.4em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .config-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .config-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .config-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .config-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .config-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .config-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .config-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .connect-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .connect-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .last-update {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .config-row {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .card-value {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌡️ SHT40 IoT Dashboard</h1>
+            <div class="status disconnected" id="status">Disconnected</div>
+        </div>
+        
+        <div class="cards">
+            <div class="card temperature">
+                <div class="card-icon">🌡️</div>
+                <div class="card-title">Temperature</div>
+                <div class="card-value" id="temperature">--</div>
+                <div class="card-unit">°C</div>
+            </div>
+            
+            <div class="card humidity">
+                <div class="card-icon">💧</div>
+                <div class="card-title">Humidity</div>
+                <div class="card-value" id="humidity">--</div>
+                <div class="card-unit">%</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">📊 Real-time Data</div>
+            <canvas id="dataChart" width="400" height="200"></canvas>
+        </div>
+        
+        <div class="config-panel">
+            <div class="config-title">⚙️ MQTT Configuration</div>
+            <div class="config-row">
+                <div class="config-group">
+                    <label for="broker">MQTT Broker</label>
+                    <input type="text" id="broker" value="broker.emqx.io" placeholder="broker.emqx.io">
+                </div>
+                <div class="config-group">
+                    <label for="port">Port</label>
+                    <input type="number" id="port" value="8083" placeholder="8083">
+                </div>
+            </div>
+            <div class="config-row">
+                <div class="config-group">
+                    <label for="tempTopic">Temperature Topic</label>
+                    <input type="text" id="tempTopic" value="sensor/temperature" placeholder="sensor/temperature">
+                </div>
+                <div class="config-group">
+                    <label for="humTopic">Humidity Topic</label>
+                    <input type="text" id="humTopic" value="sensor/humidity" placeholder="sensor/humidity">
+                </div>
+            </div>
+            <button class="connect-btn" onclick="toggleConnection()" id="connectBtn">Connect</button>
+        </div>
+        
+        <div class="last-update" id="lastUpdate">
+            Last updated: Never
+        </div>
+    </div>
+
+    <script>
+        let client = null;
+        let connected = false;
+        let chart = null;
+        let temperatureData = [];
+        let humidityData = [];
+        let labels = [];
+        const maxDataPoints = 20;
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('dataChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: temperatureData,
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Humidity (%)',
+                        data: humidityData,
+                        borderColor: '#4ecdc4',
+                        backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Humidity (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 3,
+                            hoverRadius: 6
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            if (chart) {
+                chart.update('none');
+            }
+        }
+
+        function addDataPoint(temp, hum) {
+            const now = new Date().toLocaleTimeString();
+            
+            if (labels.length >= maxDataPoints) {
+                labels.shift();
+                temperatureData.shift();
+                humidityData.shift();
+            }
+            
+            labels.push(now);
+            temperatureData.push(parseFloat(temp));
+            humidityData.push(parseFloat(hum));
+            
+            updateChart();
+        }
+
+        function updateStatus(isConnected) {
+            const statusEl = document.getElementById('status');
+            const connectBtn = document.getElementById('connectBtn');
+            
+            if (isConnected) {
+                statusEl.textContent = 'Connected';
+                statusEl.className = 'status connected';
+                connectBtn.textContent = 'Disconnect';
+            } else {
+                statusEl.textContent = 'Disconnected';
+                statusEl.className = 'status disconnected';
+                connectBtn.textContent = 'Connect';
+            }
+        }
+
+        function updateLastUpdate() {
+            document.getElementById('lastUpdate').textContent = 
+                `Last updated: ${new Date().toLocaleString()}`;
+        }
+
+        function connectMQTT() {
+            const broker = document.getElementById('broker').value;
+            const port = parseInt(document.getElementById('port').value);
+            const tempTopic = document.getElementById('tempTopic').value;
+            const humTopic = document.getElementById('humTopic').value;
+
+            try {
+                const clientId = 'dashboard_' + Math.random().toString(36).substr(2, 9);
+                client = new Paho.MQTT.Client(broker, port, "/mqtt", clientId);
+
+                client.onConnectionLost = function(responseObject) {
+                    if (responseObject.errorCode !== 0) {
+                        console.log("Connection lost: " + responseObject.errorMessage);
+                        connected = false;
+                        updateStatus(false);
+                    }
+                };
+
+                client.onMessageArrived = function(message) {
+                    console.log("Message arrived: " + message.payloadString + " on topic: " + message.destinationName);
+                    
+                    const value = parseFloat(message.payloadString);
+                    if (isNaN(value)) return;
+
+                    if (message.destinationName === tempTopic) {
+                        document.getElementById('temperature').textContent = value.toFixed(1);
+                    } else if (message.destinationName === humTopic) {
+                        document.getElementById('humidity').textContent = value.toFixed(1);
+                    }
+
+                    // Update chart if we have both values
+                    const tempValue = document.getElementById('temperature').textContent;
+                    const humValue = document.getElementById('humidity').textContent;
+                    
+                    if (tempValue !== '--' && humValue !== '--') {
+                        addDataPoint(tempValue, humValue);
+                    }
+                    
+                    updateLastUpdate();
+                };
+
+                client.connect({
+                    onSuccess: function() {
+                        console.log("Connected to MQTT broker");
+                        connected = true;
+                        updateStatus(true);
+                        
+                        client.subscribe(tempTopic);
+                        client.subscribe(humTopic);
+                        console.log("Subscribed to topics:", tempTopic, humTopic);
+                    },
+                    onFailure: function(message) {
+                        console.log("Connection failed: " + message.errorMessage);
+                        connected = false;
+                        updateStatus(false);
+                        alert("Connection failed: " + message.errorMessage);
+                    },
+                    useSSL: true
+                });
+
+            } catch (error) {
+                console.error("MQTT connection error:", error);
+                alert("Connection error: " + error.message);
+            }
+        }
+
+        function disconnectMQTT() {
+            if (client && connected) {
+                client.disconnect();
+                connected = false;
+                updateStatus(false);
+                console.log("Disconnected from MQTT broker");
+            }
+        }
+
+        function toggleConnection() {
+            const connectBtn = document.getElementById('connectBtn');
+            connectBtn.disabled = true;
+            
+            if (connected) {
+                disconnectMQTT();
+            } else {
+                connectMQTT();
+            }
+            
+            setTimeout(() => {
+                connectBtn.disabled = false;
+            }, 1000);
+        }
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+        });
+    </script>
+</body>
+</html>
