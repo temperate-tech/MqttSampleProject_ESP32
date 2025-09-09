@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHT4x Sensor Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f7fa;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .sensor-card {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .sensor {
+      width: 48%;
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .chart-container {
+      height: 300px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SHT4x Sensor Dashboard</h1>
+    <div class="sensor-card">
+      <div class="sensor">
+        <h2>Sensor 1</h2>
+        <div class="value" id="sensor1Temp">--</div>
+        <div>Temperature (°C)</div>
+        <div class="value" id="sensor1Humidity">--</div>
+        <div>Humidity (%)</div>
+      </div>
+      <div class="sensor">
+        <h2>Sensor 2</h2>
+        <div class="value" id="sensor2Temp">--</div>
+        <div>Temperature (°C)</div>
+        <div class="value" id="sensor2Humidity">--</div>
+        <div>Humidity (%)</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="sensorChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // MQTT Client
+    const clientId = 'dashboard_' + Math.random().toString(16).substr(2, 8);
+    const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
+      clientId: clientId,
+      keepalive: 60,
+      clean: true,
+    });
+
+    // Chart Setup
+    const ctx = document.getElementById('sensorChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [
+          { label: 'Sensor 1 Temp', borderColor: 'rgb(255, 99, 132)', data: [] },
+          { label: 'Sensor 1 Humidity', borderColor: 'rgb(54, 162, 235)', data: [] },
+          { label: 'Sensor 2 Temp', borderColor: 'rgb(75, 192, 192)', data: [] },
+          { label: 'Sensor 2 Humidity', borderColor: 'rgb(153, 102, 255)', data: [] }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { type: 'time', time: { unit: 'minute' }, title: { display: true, text: 'Time' } },
+          y: { title: { display: true, text: 'Value' } }
+        }
+      }
+    });
+
+    // Update UI
+    client.on('connect', () => {
+      console.log('Connected to MQTT broker');
+      client.subscribe('esp32/sensor1/temp');
+      client.subscribe('esp32/sensor1/humidity');
+      client.subscribe('esp32/sensor2/temp');
+      client.subscribe('esp32/sensor2/humidity');
+    });
+
+    client.on('message', (topic, message) => {
+      const value = parseFloat(message.toString());
+      const now = new Date();
+
+      if (topic === 'esp32/sensor1/temp') {
+        document.getElementById('sensor1Temp').textContent = value.toFixed(2);
+        chart.data.datasets[0].data.push({ x: now, y: value });
+      } else if (topic === 'esp32/sensor1/humidity') {
+        document.getElementById('sensor1Humidity').textContent = value.toFixed(2);
+        chart.data.datasets[1].data.push({ x: now, y: value });
+      } else if (topic === 'esp32/sensor2/temp') {
+        document.getElementById('sensor2Temp').textContent = value.toFixed(2);
+        chart.data.datasets[2].data.push({ x: now, y: value });
+      } else if (topic === 'esp32/sensor2/humidity') {
+        document.getElementById('sensor2Humidity').textContent = value.toFixed(2);
+        chart.data.datasets[3].data.push({ x: now, y: value });
+      }
+      chart.update();
+    });
+  </script>
+</body>
+</html>
