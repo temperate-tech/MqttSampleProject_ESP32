@@ -105,6 +105,15 @@
       text-align: right;
       margin-top: 20px;
     }
+    #confirmDownload {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -138,12 +147,12 @@
       <span class="close">&times;</span>
       <h2>Select Date and Time Range</h2>
       <div class="form-group">
-        <label for="startDate">Start Date:</label>
-        <input type="datetime-local" id="startDate">
+        <label for="startDateTime">Start Date and Time:</label>
+        <input type="datetime-local" id="startDateTime">
       </div>
       <div class="form-group">
-        <label for="endDate">End Date:</label>
-        <input type="datetime-local" id="endDate">
+        <label for="endDateTime">End Date and Time:</label>
+        <input type="datetime-local" id="endDateTime">
       </div>
       <div class="download-action">
         <button id="confirmDownload">Download</button>
@@ -225,33 +234,45 @@
     });
 
     confirmDownload.addEventListener('click', () => {
-      const startDate = new Date(document.getElementById('startDate').value);
-      const endDate = new Date(document.getElementById('endDate').value);
+      const startDateTime = new Date(document.getElementById('startDateTime').value);
+      const endDateTime = new Date(document.getElementById('endDateTime').value);
+
+      if (!startDateTime || !endDateTime) {
+        alert("Please select both start and end date/time.");
+        return;
+      }
 
       // Filter data based on selected range
-      const filteredData = chart.data.datasets.map(dataset => {
-        return {
-          label: dataset.label,
-          data: dataset.data.filter(point => {
-            return point.x >= startDate && point.x <= endDate;
-          })
-        };
+      const filteredData = chart.data.datasets.flatMap(dataset => {
+        return dataset.data
+          .filter(point => point.x >= startDateTime && point.x <= endDateTime)
+          .map(point => ({
+            Time: point.x.toISOString(),
+            Sensor: dataset.label,
+            Value: point.y
+          }));
       });
 
-      // Convert to CSV and download
+      if (filteredData.length === 0) {
+        alert("No data available for the selected range.");
+        return;
+      }
+
+      // Convert to CSV
       let csv = 'Time,Sensor,Value\n';
-      filteredData.forEach(dataset => {
-        dataset.data.forEach(point => {
-          csv += `${point.x},${dataset.label},${point.y}\n`;
-        });
+      filteredData.forEach(row => {
+        csv += `${row.Time},${row.Sensor},${row.Value}\n`;
       });
 
+      // Download CSV
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `sensor_data_${startDate.toISOString()}_to_${endDate.toISOString()}.csv`;
+      a.download = `sensor_data_${startDateTime.toISOString().slice(0, 10)}_to_${endDateTime.toISOString().slice(0, 10)}.csv`;
       a.click();
+
+      // Close modal
       modal.style.display = 'none';
     });
   </script>
