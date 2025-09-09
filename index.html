@@ -31,13 +31,15 @@
       display: flex;
       justify-content: space-between;
       margin-bottom: 20px;
+      flex-wrap: wrap;
     }
     .sensor {
-      width: 48%;
+      width: 30%;
       background: #f8f9fa;
       padding: 15px;
       border-radius: 8px;
       text-align: center;
+      margin-bottom: 10px;
     }
     .value {
       font-size: 2rem;
@@ -48,7 +50,6 @@
       height: 300px;
       margin-top: 20px;
     }
-    /* Download Button */
     .download-btn {
       background-color: #4CAF50;
       color: white;
@@ -59,7 +60,6 @@
       font-size: 16px;
       margin-bottom: 20px;
     }
-    /* Modal/Ribbon Window */
     .modal {
       display: none;
       position: fixed;
@@ -135,12 +135,18 @@
         <div class="value" id="sensor2Humidity">--</div>
         <div>Humidity (%)</div>
       </div>
+      <div class="sensor">
+        <h2>Sensor 3</h2>
+        <div class="value" id="sensor3Temp">--</div>
+        <div>Temperature (°C)</div>
+        <div class="value" id="sensor3Humidity">--</div>
+        <div>Humidity (%)</div>
+      </div>
     </div>
     <div class="chart-container">
       <canvas id="sensorChart"></canvas>
     </div>
   </div>
-
   <!-- Modal/Ribbon Window -->
   <div id="downloadModal" class="modal">
     <div class="modal-content">
@@ -159,7 +165,6 @@
       </div>
     </div>
   </div>
-
   <script>
     // MQTT Client
     const clientId = 'dashboard_' + Math.random().toString(16).substr(2, 8);
@@ -168,7 +173,6 @@
       keepalive: 60,
       clean: true,
     });
-
     // Chart Setup
     const ctx = document.getElementById('sensorChart').getContext('2d');
     const chart = new Chart(ctx, {
@@ -178,7 +182,9 @@
           { label: 'Sensor 1 Temp', borderColor: 'rgb(255, 99, 132)', data: [] },
           { label: 'Sensor 1 Humidity', borderColor: 'rgb(54, 162, 235)', data: [] },
           { label: 'Sensor 2 Temp', borderColor: 'rgb(75, 192, 192)', data: [] },
-          { label: 'Sensor 2 Humidity', borderColor: 'rgb(153, 102, 255)', data: [] }
+          { label: 'Sensor 2 Humidity', borderColor: 'rgb(153, 102, 255)', data: [] },
+          { label: 'Sensor 3 Temp', borderColor: 'rgb(255, 159, 64)', data: [] },
+          { label: 'Sensor 3 Humidity', borderColor: 'rgb(255, 205, 86)', data: [] }
         ]
       },
       options: {
@@ -190,7 +196,6 @@
         }
       }
     });
-
     // Update UI
     client.on('connect', () => {
       console.log('Connected to MQTT broker');
@@ -198,8 +203,9 @@
       client.subscribe('esp32/sensor1/humidity');
       client.subscribe('esp32/sensor2/temp');
       client.subscribe('esp32/sensor2/humidity');
+      client.subscribe('esp32/sensor3/temp');
+      client.subscribe('esp32/sensor3/humidity');
     });
-
     client.on('message', (topic, message) => {
       const value = parseFloat(message.toString());
       const now = new Date();
@@ -215,75 +221,69 @@
       } else if (topic === 'esp32/sensor2/humidity') {
         document.getElementById('sensor2Humidity').textContent = value.toFixed(2);
         chart.data.datasets[3].data.push({ x: now, y: value });
+      } else if (topic === 'esp32/sensor3/temp') {
+        document.getElementById('sensor3Temp').textContent = value.toFixed(2);
+        chart.data.datasets[4].data.push({ x: now, y: value });
+      } else if (topic === 'esp32/sensor3/humidity') {
+        document.getElementById('sensor3Humidity').textContent = value.toFixed(2);
+        chart.data.datasets[5].data.push({ x: now, y: value });
       }
       chart.update();
     });
-
     // Download Modal Logic
     const downloadBtn = document.getElementById('downloadBtn');
     const modal = document.getElementById('downloadModal');
     const closeBtn = document.querySelector('.close');
     const confirmDownload = document.getElementById('confirmDownload');
-
     downloadBtn.addEventListener('click', () => {
       modal.style.display = 'block';
     });
-
     closeBtn.addEventListener('click', () => {
       modal.style.display = 'none';
     });
-
     confirmDownload.addEventListener('click', () => {
-  const startDateTime = new Date(document.getElementById('startDateTime').value);
-  const endDateTime = new Date(document.getElementById('endDateTime').value);
-
-  if (!startDateTime || !endDateTime) {
-    alert("Please select both start and end date/time.");
-    return;
-  }
-
-  // Filter and organize data by timestamp
-  const timestamps = [...new Set(
-    chart.data.datasets.flatMap(dataset =>
-      dataset.data
-        .filter(point => point.x >= startDateTime && point.x <= endDateTime)
-        .map(point => point.x.getTime())
-    )
-  )].sort((a, b) => a - b);
-
-  if (timestamps.length === 0) {
-    alert("No data available for the selected range.");
-    return;
-  }
-
-  // Prepare CSV content
-  let csv = 'Serial No.,Date,Time,Sensor1_Humidity,Sensor1_Temperature,Sensor2_Humidity,Sensor2_Temperature\n';
-
-  timestamps.forEach((timestamp, index) => {
-    const date = new Date(timestamp);
-    const dateStr = date.toISOString().slice(0, 10);
-    const timeStr = date.toISOString().slice(11, 19);
-
-    const sensor1Humidity = chart.data.datasets[1].data.find(point => point.x.getTime() === timestamp)?.y || '';
-    const sensor1Temp = chart.data.datasets[0].data.find(point => point.x.getTime() === timestamp)?.y || '';
-    const sensor2Humidity = chart.data.datasets[3].data.find(point => point.x.getTime() === timestamp)?.y || '';
-    const sensor2Temp = chart.data.datasets[2].data.find(point => point.x.getTime() === timestamp)?.y || '';
-
-    csv += `${index + 1},${dateStr},${timeStr},${sensor1Humidity},${sensor1Temp},${sensor2Humidity},${sensor2Temp}\n`;
-  });
-
-  // Download CSV
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `sensor_data_${startDateTime.toISOString().slice(0, 10)}_to_${endDateTime.toISOString().slice(0, 10)}.csv`;
-  a.click();
-
-  // Close modal
-  modal.style.display = 'none';
-});
-
+      const startDateTime = new Date(document.getElementById('startDateTime').value);
+      const endDateTime = new Date(document.getElementById('endDateTime').value);
+      if (!startDateTime || !endDateTime) {
+        alert("Please select both start and end date/time.");
+        return;
+      }
+      // Filter and organize data by timestamp
+      const timestamps = [...new Set(
+        chart.data.datasets.flatMap(dataset =>
+          dataset.data
+            .filter(point => point.x >= startDateTime && point.x <= endDateTime)
+            .map(point => point.x.getTime())
+        )
+      )].sort((a, b) => a - b);
+      if (timestamps.length === 0) {
+        alert("No data available for the selected range.");
+        return;
+      }
+      // Prepare CSV content
+      let csv = 'Serial No.,Date,Time,Sensor1_Humidity,Sensor1_Temperature,Sensor2_Humidity,Sensor2_Temperature,Sensor3_Humidity,Sensor3_Temperature\n';
+      timestamps.forEach((timestamp, index) => {
+        const date = new Date(timestamp);
+        const dateStr = date.toISOString().slice(0, 10);
+        const timeStr = date.toISOString().slice(11, 19);
+        const sensor1Humidity = chart.data.datasets[1].data.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor1Temp = chart.data.datasets[0].data.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor2Humidity = chart.data.datasets[3].data.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor2Temp = chart.data.datasets[2].data.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor3Humidity = chart.data.datasets[5].data.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor3Temp = chart.data.datasets[4].data.find(point => point.x.getTime() === timestamp)?.y || '';
+        csv += `${index + 1},${dateStr},${timeStr},${sensor1Humidity},${sensor1Temp},${sensor2Humidity},${sensor2Temp},${sensor3Humidity},${sensor3Temp}\n`;
+      });
+      // Download CSV
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sensor_data_${startDateTime.toISOString().slice(0, 10)}_to_${endDateTime.toISOString().slice(0, 10)}.csv`;
+      a.click();
+      // Close modal
+      modal.style.display = 'none';
+    });
   </script>
 </body>
 </html>
