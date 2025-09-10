@@ -8,15 +8,16 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 20px;
-      background-color: #f5f7fa;
+      background-color: #f0f2f5;
     }
     .container {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
       background: white;
       padding: 20px;
@@ -26,29 +27,94 @@
     h1 {
       text-align: center;
       color: #333;
+      margin-bottom: 20px;
     }
-    .sensor-card {
+    .sensor-row {
       display: flex;
       justify-content: space-between;
       margin-bottom: 20px;
       flex-wrap: wrap;
     }
     .sensor {
-      width: 48%;
+      width: 23%;
       background: #f8f9fa;
       padding: 15px;
       border-radius: 8px;
       text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .sensor-icon {
+      font-size: 2rem;
       margin-bottom: 10px;
     }
+    .humidity-icon {
+      color: #4a90e2;
+    }
+    .temp-icon {
+      color: #ff6b6b;
+    }
     .value {
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: bold;
       margin: 10px 0;
+    }
+    .label {
+      font-size: 0.9rem;
+      color: #666;
     }
     .chart-container {
       height: 300px;
       margin-top: 20px;
+      position: relative;
+    }
+    .toggle-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+    .toggle-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .toggle-btn.active {
+      background-color: #4a90e2;
+      color: white;
+    }
+    .toggle-btn:not(.active) {
+      background-color: #e0e0e0;
+      color: #333;
+    }
+    .datetime-picker {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+    .datetime-picker input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .datetime-picker button {
+      padding: 8px 12px;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .graph-section {
+      margin-bottom: 30px;
+    }
+    .graph-title {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
     }
     /* Download Button */
     .download-btn {
@@ -122,38 +188,93 @@
   <div class="container">
     <h1>SHT4x Sensor Dashboard</h1>
     <button class="download-btn" id="downloadBtn">Download Data</button>
-    <div class="sensor-card">
+    <div class="sensor-row">
+      <!-- Sensor 1 -->
       <div class="sensor">
-        <h2>Sensor 1</h2>
-        <div class="value" id="sensor1Temp">--</div>
-        <div>Temperature (°C)</div>
+        <div class="sensor-icon humidity-icon">
+          <i class="fas fa-tint"></i>
+        </div>
         <div class="value" id="sensor1Humidity">--</div>
-        <div>Humidity (%)</div>
+        <div class="label">Ambient RH%</div>
+        <div class="sensor-icon temp-icon">
+          <i class="fas fa-thermometer-half"></i>
+        </div>
+        <div class="value" id="sensor1Temp">--</div>
+        <div class="label">Ambient T°C</div>
       </div>
+      <!-- Sensor 2 -->
       <div class="sensor">
-        <h2>Sensor 2</h2>
-        <div class="value" id="sensor2Temp">--</div>
-        <div>Temperature (°C)</div>
+        <div class="sensor-icon humidity-icon">
+          <i class="fas fa-tint"></i>
+        </div>
         <div class="value" id="sensor2Humidity">--</div>
-        <div>Humidity (%)</div>
+        <div class="label">Center RH%</div>
+        <div class="sensor-icon temp-icon">
+          <i class="fas fa-thermometer-half"></i>
+        </div>
+        <div class="value" id="sensor2Temp">--</div>
+        <div class="label">Center T°C</div>
       </div>
+      <!-- Sensor 3 -->
       <div class="sensor">
-        <h2>Sensor 3</h2>
-        <div class="value" id="sensor3Temp">--</div>
-        <div>Temperature (°C)</div>
+        <div class="sensor-icon humidity-icon">
+          <i class="fas fa-tint"></i>
+        </div>
         <div class="value" id="sensor3Humidity">--</div>
-        <div>Humidity (%)</div>
+        <div class="label">Sensor 3 RH%</div>
+        <div class="sensor-icon temp-icon">
+          <i class="fas fa-thermometer-half"></i>
+        </div>
+        <div class="value" id="sensor3Temp">--</div>
+        <div class="label">Sensor 3 T°C</div>
       </div>
+      <!-- Sensor 4 -->
       <div class="sensor">
-        <h2>Sensor 4</h2>
-        <div class="value" id="sensor4Temp">--</div>
-        <div>Temperature (°C)</div>
+        <div class="sensor-icon humidity-icon">
+          <i class="fas fa-tint"></i>
+        </div>
         <div class="value" id="sensor4Humidity">--</div>
-        <div>Humidity (%)</div>
+        <div class="label">Sensor 4 RH%</div>
+        <div class="sensor-icon temp-icon">
+          <i class="fas fa-thermometer-half"></i>
+        </div>
+        <div class="value" id="sensor4Temp">--</div>
+        <div class="label">Sensor 4 T°C</div>
       </div>
     </div>
-    <div class="chart-container">
-      <canvas id="sensorChart"></canvas>
+
+    <!-- Temperature Graph -->
+    <div class="graph-section">
+      <div class="graph-title">Temperature (°C)</div>
+      <div class="toggle-container">
+        <button class="toggle-btn active" id="tempLiveBtn">Live</button>
+        <button class="toggle-btn" id="tempHistoricBtn">Historic</button>
+      </div>
+      <div class="datetime-picker" id="tempDatetimePicker" style="display: none;">
+        <input type="datetime-local" id="tempStartDateTime">
+        <input type="datetime-local" id="tempEndDateTime">
+        <button id="applyTempDateRange">Apply</button>
+      </div>
+      <div class="chart-container">
+        <canvas id="tempChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Humidity Graph -->
+    <div class="graph-section">
+      <div class="graph-title">Humidity (%)</div>
+      <div class="toggle-container">
+        <button class="toggle-btn active" id="humidityLiveBtn">Live</button>
+        <button class="toggle-btn" id="humidityHistoricBtn">Historic</button>
+      </div>
+      <div class="datetime-picker" id="humidityDatetimePicker" style="display: none;">
+        <input type="datetime-local" id="humidityStartDateTime">
+        <input type="datetime-local" id="humidityEndDateTime">
+        <button id="applyHumidityDateRange">Apply</button>
+      </div>
+      <div class="chart-container">
+        <canvas id="humidityChart"></canvas>
+      </div>
     </div>
   </div>
 
@@ -185,20 +306,24 @@
       clean: true,
     });
 
-    // Chart Setup
-    const ctx = document.getElementById('sensorChart').getContext('2d');
-    const chart = new Chart(ctx, {
+    // Store all data for historic view and download
+    const allData = {
+      sensor1Temp: [], sensor1Humidity: [],
+      sensor2Temp: [], sensor2Humidity: [],
+      sensor3Temp: [], sensor3Humidity: [],
+      sensor4Temp: [], sensor4Humidity: []
+    };
+
+    // Temperature Chart Setup
+    const tempCtx = document.getElementById('tempChart').getContext('2d');
+    const tempChart = new Chart(tempCtx, {
       type: 'line',
       data: {
         datasets: [
-          { label: 'Sensor 1 Temp', borderColor: 'rgb(255, 99, 132)', data: [] },
-          { label: 'Sensor 1 Humidity', borderColor: 'rgb(54, 162, 235)', data: [] },
-          { label: 'Sensor 2 Temp', borderColor: 'rgb(75, 192, 192)', data: [] },
-          { label: 'Sensor 2 Humidity', borderColor: 'rgb(153, 102, 255)', data: [] },
-          { label: 'Sensor 3 Temp', borderColor: 'rgb(255, 159, 64)', data: [] },
-          { label: 'Sensor 3 Humidity', borderColor: 'rgb(255, 205, 86)', data: [] },
-          { label: 'Sensor 4 Temp', borderColor: 'rgb(128, 0, 128)', data: [] },
-          { label: 'Sensor 4 Humidity', borderColor: 'rgb(0, 128, 0)', data: [] }
+          { label: 'Sensor 1 Temp', borderColor: '#ff6b6b', data: [], tension: 0.3 },
+          { label: 'Sensor 2 Temp', borderColor: '#ffa500', data: [], tension: 0.3 },
+          { label: 'Sensor 3 Temp', borderColor: '#9b59b6', data: [], tension: 0.3 },
+          { label: 'Sensor 4 Temp', borderColor: '#e74c3c', data: [], tension: 0.3 }
         ]
       },
       options: {
@@ -206,7 +331,29 @@
         maintainAspectRatio: false,
         scales: {
           x: { type: 'time', time: { unit: 'minute' }, title: { display: true, text: 'Time' } },
-          y: { title: { display: true, text: 'Value' } }
+          y: { title: { display: true, text: 'Temperature (°C)' } }
+        }
+      }
+    });
+
+    // Humidity Chart Setup
+    const humidityCtx = document.getElementById('humidityChart').getContext('2d');
+    const humidityChart = new Chart(humidityCtx, {
+      type: 'line',
+      data: {
+        datasets: [
+          { label: 'Sensor 1 Humidity', borderColor: '#4a90e2', data: [], tension: 0.3 },
+          { label: 'Sensor 2 Humidity', borderColor: '#40e0d0', data: [], tension: 0.3 },
+          { label: 'Sensor 3 Humidity', borderColor: '#1abc9c', data: [], tension: 0.3 },
+          { label: 'Sensor 4 Humidity', borderColor: '#3498db', data: [], tension: 0.3 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { type: 'time', time: { unit: 'minute' }, title: { display: true, text: 'Time' } },
+          y: { title: { display: true, text: 'Humidity (%)' } }
         }
       }
     });
@@ -227,32 +374,125 @@
     client.on('message', (topic, message) => {
       const value = parseFloat(message.toString());
       const now = new Date();
+      const dataPoint = { x: now, y: value };
+
       if (topic === 'esp32/sensor1/temp') {
         document.getElementById('sensor1Temp').textContent = value.toFixed(2);
-        chart.data.datasets[0].data.push({ x: now, y: value });
+        tempChart.data.datasets[0].data.push(dataPoint);
+        allData.sensor1Temp.push(dataPoint);
       } else if (topic === 'esp32/sensor1/humidity') {
         document.getElementById('sensor1Humidity').textContent = value.toFixed(2);
-        chart.data.datasets[1].data.push({ x: now, y: value });
+        humidityChart.data.datasets[0].data.push(dataPoint);
+        allData.sensor1Humidity.push(dataPoint);
       } else if (topic === 'esp32/sensor2/temp') {
         document.getElementById('sensor2Temp').textContent = value.toFixed(2);
-        chart.data.datasets[2].data.push({ x: now, y: value });
+        tempChart.data.datasets[1].data.push(dataPoint);
+        allData.sensor2Temp.push(dataPoint);
       } else if (topic === 'esp32/sensor2/humidity') {
         document.getElementById('sensor2Humidity').textContent = value.toFixed(2);
-        chart.data.datasets[3].data.push({ x: now, y: value });
+        humidityChart.data.datasets[1].data.push(dataPoint);
+        allData.sensor2Humidity.push(dataPoint);
       } else if (topic === 'esp32/sensor3/temp') {
         document.getElementById('sensor3Temp').textContent = value.toFixed(2);
-        chart.data.datasets[4].data.push({ x: now, y: value });
+        tempChart.data.datasets[2].data.push(dataPoint);
+        allData.sensor3Temp.push(dataPoint);
       } else if (topic === 'esp32/sensor3/humidity') {
         document.getElementById('sensor3Humidity').textContent = value.toFixed(2);
-        chart.data.datasets[5].data.push({ x: now, y: value });
+        humidityChart.data.datasets[2].data.push(dataPoint);
+        allData.sensor3Humidity.push(dataPoint);
       } else if (topic === 'esp32/sensor4/temp') {
         document.getElementById('sensor4Temp').textContent = value.toFixed(2);
-        chart.data.datasets[6].data.push({ x: now, y: value });
+        tempChart.data.datasets[3].data.push(dataPoint);
+        allData.sensor4Temp.push(dataPoint);
       } else if (topic === 'esp32/sensor4/humidity') {
         document.getElementById('sensor4Humidity').textContent = value.toFixed(2);
-        chart.data.datasets[7].data.push({ x: now, y: value });
+        humidityChart.data.datasets[3].data.push(dataPoint);
+        allData.sensor4Humidity.push(dataPoint);
       }
-      chart.update();
+      tempChart.update();
+      humidityChart.update();
+    });
+
+    // Toggle Live/Historic View for Temperature
+    const tempLiveBtn = document.getElementById('tempLiveBtn');
+    const tempHistoricBtn = document.getElementById('tempHistoricBtn');
+    const tempDatetimePicker = document.getElementById('tempDatetimePicker');
+
+    tempLiveBtn.addEventListener('click', () => {
+      tempLiveBtn.classList.add('active');
+      tempHistoricBtn.classList.remove('active');
+      tempDatetimePicker.style.display = 'none';
+      resetTempChartToLive();
+    });
+
+    tempHistoricBtn.addEventListener('click', () => {
+      tempHistoricBtn.classList.add('active');
+      tempLiveBtn.classList.remove('active');
+      tempDatetimePicker.style.display = 'flex';
+    });
+
+    function resetTempChartToLive() {
+      tempChart.data.datasets.forEach(dataset => dataset.data = []);
+      tempChart.update();
+    }
+
+    // Apply Date Range for Temperature Historic View
+    document.getElementById('applyTempDateRange').addEventListener('click', () => {
+      const startDateTime = new Date(document.getElementById('tempStartDateTime').value);
+      const endDateTime = new Date(document.getElementById('tempEndDateTime').value);
+
+      if (!startDateTime || !endDateTime) {
+        alert("Please select both start and end date/time.");
+        return;
+      }
+
+      tempChart.data.datasets[0].data = allData.sensor1Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+      tempChart.data.datasets[1].data = allData.sensor2Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+      tempChart.data.datasets[2].data = allData.sensor3Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+      tempChart.data.datasets[3].data = allData.sensor4Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+
+      tempChart.update();
+    });
+
+    // Toggle Live/Historic View for Humidity
+    const humidityLiveBtn = document.getElementById('humidityLiveBtn');
+    const humidityHistoricBtn = document.getElementById('humidityHistoricBtn');
+    const humidityDatetimePicker = document.getElementById('humidityDatetimePicker');
+
+    humidityLiveBtn.addEventListener('click', () => {
+      humidityLiveBtn.classList.add('active');
+      humidityHistoricBtn.classList.remove('active');
+      humidityDatetimePicker.style.display = 'none';
+      resetHumidityChartToLive();
+    });
+
+    humidityHistoricBtn.addEventListener('click', () => {
+      humidityHistoricBtn.classList.add('active');
+      humidityLiveBtn.classList.remove('active');
+      humidityDatetimePicker.style.display = 'flex';
+    });
+
+    function resetHumidityChartToLive() {
+      humidityChart.data.datasets.forEach(dataset => dataset.data = []);
+      humidityChart.update();
+    }
+
+    // Apply Date Range for Humidity Historic View
+    document.getElementById('applyHumidityDateRange').addEventListener('click', () => {
+      const startDateTime = new Date(document.getElementById('humidityStartDateTime').value);
+      const endDateTime = new Date(document.getElementById('humidityEndDateTime').value);
+
+      if (!startDateTime || !endDateTime) {
+        alert("Please select both start and end date/time.");
+        return;
+      }
+
+      humidityChart.data.datasets[0].data = allData.sensor1Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+      humidityChart.data.datasets[1].data = allData.sensor2Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+      humidityChart.data.datasets[2].data = allData.sensor3Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+      humidityChart.data.datasets[3].data = allData.sensor4Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+
+      humidityChart.update();
     });
 
     // Download Modal Logic
@@ -279,8 +519,8 @@
 
       // Filter and organize data by timestamp
       const timestamps = [...new Set(
-        chart.data.datasets.flatMap(dataset =>
-          dataset.data
+        Object.values(allData).flatMap(dataset =>
+          dataset
             .filter(point => point.x >= startDateTime && point.x <= endDateTime)
             .map(point => point.x.getTime())
         )
@@ -299,14 +539,14 @@
         const dateStr = date.toISOString().slice(0, 10);
         const timeStr = date.toISOString().slice(11, 19);
 
-        const sensor1Humidity = chart.data.datasets[1].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor1Temp = chart.data.datasets[0].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor2Humidity = chart.data.datasets[3].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor2Temp = chart.data.datasets[2].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor3Humidity = chart.data.datasets[5].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor3Temp = chart.data.datasets[4].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor4Humidity = chart.data.datasets[7].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor4Temp = chart.data.datasets[6].data.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor1Humidity = allData.sensor1Humidity.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor1Temp = allData.sensor1Temp.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor2Humidity = allData.sensor2Humidity.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor2Temp = allData.sensor2Temp.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor3Humidity = allData.sensor3Humidity.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor3Temp = allData.sensor3Temp.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor4Humidity = allData.sensor4Humidity.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor4Temp = allData.sensor4Temp.find(point => point.x.getTime() === timestamp)?.y || '';
 
         csv += `${index + 1},${dateStr},${timeStr},${sensor1Humidity},${sensor1Temp},${sensor2Humidity},${sensor2Temp},${sensor3Humidity},${sensor3Temp},${sensor4Humidity},${sensor4Temp}\n`;
       });
