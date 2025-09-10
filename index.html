@@ -549,24 +549,36 @@
       tempChart.update();
     }
 
-    // Apply date range for temperature historic view
-    document.getElementById('applyTempDateRange').addEventListener('click', () => {
-      const startDateTime = new Date(document.getElementById('tempStartDateTime').value);
-      const endDateTime = new Date(document.getElementById('tempEndDateTime').value);
+    // Add this function to fetch historic data from your backend
+    async function fetchHistoricData(sensorId, startDate, endDate) {
+      const url = `http://192.168.1.7:5000/api/sensor-data?sensorId=sensor${sensorId}&startDate=${startDate}&endDate=${endDate}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      return data;
+    }
 
+    // Update the event listener for the temperature historic button
+    document.getElementById('applyTempDateRange').addEventListener('click', async () => {
+      const startDateTime = document.getElementById('tempStartDateTime').value;
+      const endDateTime = document.getElementById('tempEndDateTime').value;
       if (!startDateTime || !endDateTime) {
         alert("Please select both start and end date/time.");
         return;
       }
-
-      // Filter data by selected date range
-      tempChart.data.datasets[0].data = allData.sensor1Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
-      tempChart.data.datasets[1].data = allData.sensor2Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
-      tempChart.data.datasets[2].data = allData.sensor3Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
-      tempChart.data.datasets[3].data = allData.sensor4Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
-
+      // Fetch historic data for each sensor
+      const sensor1Data = await fetchHistoricData(1, startDateTime, endDateTime);
+      const sensor2Data = await fetchHistoricData(2, startDateTime, endDateTime);
+      const sensor3Data = await fetchHistoricData(3, startDateTime, endDateTime);
+      const sensor4Data = await fetchHistoricData(4, startDateTime, endDateTime);
+    
+      // Update chart with fetched data
+      tempChart.data.datasets[0].data = sensor1Data.map(point => ({ x: new Date(point.timestamp), y: point.temperature }));
+      tempChart.data.datasets[1].data = sensor2Data.map(point => ({ x: new Date(point.timestamp), y: point.temperature }));
+      tempChart.data.datasets[2].data = sensor3Data.map(point => ({ x: new Date(point.timestamp), y: point.temperature }));
+      tempChart.data.datasets[3].data = sensor4Data.map(point => ({ x: new Date(point.timestamp), y: point.temperature }));
       tempChart.update();
     });
+
 
     // Humidity Live/Historic Toggle
     const humidityLiveBtn = document.getElementById('humidityLiveBtn');
@@ -596,24 +608,27 @@
       humidityChart.update();
     }
 
-    // Apply date range for humidity historic view
-    document.getElementById('applyHumidityDateRange').addEventListener('click', () => {
-      const startDateTime = new Date(document.getElementById('humidityStartDateTime').value);
-      const endDateTime = new Date(document.getElementById('humidityEndDateTime').value);
-
+    document.getElementById('applyHumidityDateRange').addEventListener('click', async () => {
+      const startDateTime = document.getElementById('humidityStartDateTime').value;
+      const endDateTime = document.getElementById('humidityEndDateTime').value;
       if (!startDateTime || !endDateTime) {
         alert("Please select both start and end date/time.");
         return;
       }
-
-      // Filter data by selected date range
-      humidityChart.data.datasets[0].data = allData.sensor1Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
-      humidityChart.data.datasets[1].data = allData.sensor2Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
-      humidityChart.data.datasets[2].data = allData.sensor3Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
-      humidityChart.data.datasets[3].data = allData.sensor4Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
-
+      // Fetch historic data for each sensor
+      const sensor1Data = await fetchHistoricData(1, startDateTime, endDateTime);
+      const sensor2Data = await fetchHistoricData(2, startDateTime, endDateTime);
+      const sensor3Data = await fetchHistoricData(3, startDateTime, endDateTime);
+      const sensor4Data = await fetchHistoricData(4, startDateTime, endDateTime);
+    
+      // Update chart with fetched data
+      humidityChart.data.datasets[0].data = sensor1Data.map(point => ({ x: new Date(point.timestamp), y: point.humidity }));
+      humidityChart.data.datasets[1].data = sensor2Data.map(point => ({ x: new Date(point.timestamp), y: point.humidity }));
+      humidityChart.data.datasets[2].data = sensor3Data.map(point => ({ x: new Date(point.timestamp), y: point.humidity }));
+      humidityChart.data.datasets[3].data = sensor4Data.map(point => ({ x: new Date(point.timestamp), y: point.humidity }));
       humidityChart.update();
     });
+
 
     // Download Modal Logic (remains the same)
     const downloadBtn = document.getElementById('downloadBtn');
