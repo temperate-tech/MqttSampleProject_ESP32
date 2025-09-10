@@ -34,7 +34,7 @@
       flex-wrap: wrap;
     }
     .sensor {
-      width: 30%;
+      width: 23%;
       background: #f8f9fa;
       padding: 15px;
       border-radius: 8px;
@@ -142,6 +142,13 @@
         <div class="value" id="sensor3Humidity">--</div>
         <div>Humidity (%)</div>
       </div>
+      <div class="sensor">
+        <h2>Sensor 4</h2>
+        <div class="value" id="sensor4Temp">--</div>
+        <div>Temperature (°C)</div>
+        <div class="value" id="sensor4Humidity">--</div>
+        <div>Humidity (%)</div>
+      </div>
     </div>
     <div class="chart-container">
       <canvas id="sensorChart"></canvas>
@@ -184,7 +191,9 @@
           { label: 'Sensor 2 Temp', borderColor: 'rgb(75, 192, 192)', data: [] },
           { label: 'Sensor 2 Humidity', borderColor: 'rgb(153, 102, 255)', data: [] },
           { label: 'Sensor 3 Temp', borderColor: 'rgb(255, 159, 64)', data: [] },
-          { label: 'Sensor 3 Humidity', borderColor: 'rgb(255, 205, 86)', data: [] }
+          { label: 'Sensor 3 Humidity', borderColor: 'rgb(255, 205, 86)', data: [] },
+          { label: 'Sensor 4 Temp', borderColor: 'rgb(128, 0, 128)', data: [] },
+          { label: 'Sensor 4 Humidity', borderColor: 'rgb(0, 128, 0)', data: [] }
         ]
       },
       options: {
@@ -205,6 +214,8 @@
       client.subscribe('esp32/sensor2/humidity');
       client.subscribe('esp32/sensor3/temp');
       client.subscribe('esp32/sensor3/humidity');
+      client.subscribe('esp32/sensor4/temp');
+      client.subscribe('esp32/sensor4/humidity');
     });
     client.on('message', (topic, message) => {
       const value = parseFloat(message.toString());
@@ -227,6 +238,12 @@
       } else if (topic === 'esp32/sensor3/humidity') {
         document.getElementById('sensor3Humidity').textContent = value.toFixed(2);
         chart.data.datasets[5].data.push({ x: now, y: value });
+      } else if (topic === 'esp32/sensor4/temp') {
+        document.getElementById('sensor4Temp').textContent = value.toFixed(2);
+        chart.data.datasets[6].data.push({ x: now, y: value });
+      } else if (topic === 'esp32/sensor4/humidity') {
+        document.getElementById('sensor4Humidity').textContent = value.toFixed(2);
+        chart.data.datasets[7].data.push({ x: now, y: value });
       }
       chart.update();
     });
@@ -261,7 +278,7 @@
         return;
       }
       // Prepare CSV content
-      let csv = 'Serial No.,Date,Time,Sensor1_Humidity,Sensor1_Temperature,Sensor2_Humidity,Sensor2_Temperature,Sensor3_Humidity,Sensor3_Temperature\n';
+      let csv = 'Serial No.,Date,Time,Sensor1_Humidity,Sensor1_Temperature,Sensor2_Humidity,Sensor2_Temperature,Sensor3_Humidity,Sensor3_Temperature,Sensor4_Humidity,Sensor4_Temperature\n';
       timestamps.forEach((timestamp, index) => {
         const date = new Date(timestamp);
         const dateStr = date.toISOString().slice(0, 10);
@@ -272,7 +289,9 @@
         const sensor2Temp = chart.data.datasets[2].data.find(point => point.x.getTime() === timestamp)?.y || '';
         const sensor3Humidity = chart.data.datasets[5].data.find(point => point.x.getTime() === timestamp)?.y || '';
         const sensor3Temp = chart.data.datasets[4].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        csv += `${index + 1},${dateStr},${timeStr},${sensor1Humidity},${sensor1Temp},${sensor2Humidity},${sensor2Temp},${sensor3Humidity},${sensor3Temp}\n`;
+        const sensor4Humidity = chart.data.datasets[7].data.find(point => point.x.getTime() === timestamp)?.y || '';
+        const sensor4Temp = chart.data.datasets[6].data.find(point => point.x.getTime() === timestamp)?.y || '';
+        csv += `${index + 1},${dateStr},${timeStr},${sensor1Humidity},${sensor1Temp},${sensor2Humidity},${sensor2Temp},${sensor3Humidity},${sensor3Temp},${sensor4Humidity},${sensor4Temp}\n`;
       });
       // Download CSV
       const blob = new Blob([csv], { type: 'text/csv' });
