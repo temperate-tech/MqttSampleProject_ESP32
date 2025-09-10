@@ -277,12 +277,12 @@
           <i class="fas fa-tint"></i>
         </div>
         <div class="value" id="sensor1Humidity">--</div>
-        <div class="label">Ambient RH%</div>
+        <div class="label">Sensor 1 RH%</div>
         <div class="sensor-icon temp-icon">
           <i class="fas fa-thermometer-half"></i>
         </div>
         <div class="value" id="sensor1Temp">--</div>
-        <div class="label">Ambient T°C</div>
+        <div class="label">Sensor 1 T°C</div>
       </div>
 
       <!-- Sensor 2 Widget -->
@@ -291,12 +291,12 @@
           <i class="fas fa-tint"></i>
         </div>
         <div class="value" id="sensor2Humidity">--</div>
-        <div class="label">Center RH%</div>
+        <div class="label">Sensor 2 RH%</div>
         <div class="sensor-icon temp-icon">
           <i class="fas fa-thermometer-half"></i>
         </div>
         <div class="value" id="sensor2Temp">--</div>
-        <div class="label">Center T°C</div>
+        <div class="label">Sensor 2 T°C</div>
       </div>
 
       <!-- Sensor 3 Widget -->
@@ -399,6 +399,10 @@
       sensor4Temp: [], sensor4Humidity: []
     };
 
+    // Track if we're in live or historic mode
+    let isTempLive = true;
+    let isHumidityLive = true;
+
     // Temperature Chart Setup
     const tempCtx = document.getElementById('tempChart').getContext('2d');
     const tempChart = new Chart(tempCtx, {
@@ -463,44 +467,58 @@
       const now = new Date();
       const dataPoint = { x: now, y: value };
 
-      // Update the appropriate sensor display and chart based on the topic
-      if (topic === 'esp32/sensor1/temp') {
-        document.getElementById('sensor1Temp').textContent = value.toFixed(2);
-        tempChart.data.datasets[0].data.push(dataPoint);
-        allData.sensor1Temp.push(dataPoint);
-      } else if (topic === 'esp32/sensor1/humidity') {
-        document.getElementById('sensor1Humidity').textContent = value.toFixed(2);
-        humidityChart.data.datasets[0].data.push(dataPoint);
-        allData.sensor1Humidity.push(dataPoint);
-      } else if (topic === 'esp32/sensor2/temp') {
-        document.getElementById('sensor2Temp').textContent = value.toFixed(2);
-        tempChart.data.datasets[1].data.push(dataPoint);
-        allData.sensor2Temp.push(dataPoint);
-      } else if (topic === 'esp32/sensor2/humidity') {
-        document.getElementById('sensor2Humidity').textContent = value.toFixed(2);
-        humidityChart.data.datasets[1].data.push(dataPoint);
-        allData.sensor2Humidity.push(dataPoint);
-      } else if (topic === 'esp32/sensor3/temp') {
-        document.getElementById('sensor3Temp').textContent = value.toFixed(2);
-        tempChart.data.datasets[2].data.push(dataPoint);
-        allData.sensor3Temp.push(dataPoint);
-      } else if (topic === 'esp32/sensor3/humidity') {
-        document.getElementById('sensor3Humidity').textContent = value.toFixed(2);
-        humidityChart.data.datasets[2].data.push(dataPoint);
-        allData.sensor3Humidity.push(dataPoint);
-      } else if (topic === 'esp32/sensor4/temp') {
-        document.getElementById('sensor4Temp').textContent = value.toFixed(2);
-        tempChart.data.datasets[3].data.push(dataPoint);
-        allData.sensor4Temp.push(dataPoint);
-      } else if (topic === 'esp32/sensor4/humidity') {
-        document.getElementById('sensor4Humidity').textContent = value.toFixed(2);
-        humidityChart.data.datasets[3].data.push(dataPoint);
-        allData.sensor4Humidity.push(dataPoint);
+      // Only update the UI if we're in live mode
+      if (isTempLive || isHumidityLive) {
+        // Update the appropriate sensor display
+        if (topic === 'esp32/sensor1/temp') {
+          document.getElementById('sensor1Temp').textContent = value.toFixed(2);
+          if (isTempLive) tempChart.data.datasets[0].data.push(dataPoint);
+        } else if (topic === 'esp32/sensor1/humidity') {
+          document.getElementById('sensor1Humidity').textContent = value.toFixed(2);
+          if (isHumidityLive) humidityChart.data.datasets[0].data.push(dataPoint);
+        } else if (topic === 'esp32/sensor2/temp') {
+          document.getElementById('sensor2Temp').textContent = value.toFixed(2);
+          if (isTempLive) tempChart.data.datasets[1].data.push(dataPoint);
+        } else if (topic === 'esp32/sensor2/humidity') {
+          document.getElementById('sensor2Humidity').textContent = value.toFixed(2);
+          if (isHumidityLive) humidityChart.data.datasets[1].data.push(dataPoint);
+        } else if (topic === 'esp32/sensor3/temp') {
+          document.getElementById('sensor3Temp').textContent = value.toFixed(2);
+          if (isTempLive) tempChart.data.datasets[2].data.push(dataPoint);
+        } else if (topic === 'esp32/sensor3/humidity') {
+          document.getElementById('sensor3Humidity').textContent = value.toFixed(2);
+          if (isHumidityLive) humidityChart.data.datasets[2].data.push(dataPoint);
+        } else if (topic === 'esp32/sensor4/temp') {
+          document.getElementById('sensor4Temp').textContent = value.toFixed(2);
+          if (isTempLive) tempChart.data.datasets[3].data.push(dataPoint);
+        } else if (topic === 'esp32/sensor4/humidity') {
+          document.getElementById('sensor4Humidity').textContent = value.toFixed(2);
+          if (isHumidityLive) humidityChart.data.datasets[3].data.push(dataPoint);
+        }
+
+        // Update charts only if in live mode
+        if (isTempLive) tempChart.update();
+        if (isHumidityLive) humidityChart.update();
       }
 
-      // Update charts
-      tempChart.update();
-      humidityChart.update();
+      // Always store data for historic view and download
+      if (topic === 'esp32/sensor1/temp') {
+        allData.sensor1Temp.push(dataPoint);
+      } else if (topic === 'esp32/sensor1/humidity') {
+        allData.sensor1Humidity.push(dataPoint);
+      } else if (topic === 'esp32/sensor2/temp') {
+        allData.sensor2Temp.push(dataPoint);
+      } else if (topic === 'esp32/sensor2/humidity') {
+        allData.sensor2Humidity.push(dataPoint);
+      } else if (topic === 'esp32/sensor3/temp') {
+        allData.sensor3Temp.push(dataPoint);
+      } else if (topic === 'esp32/sensor3/humidity') {
+        allData.sensor3Humidity.push(dataPoint);
+      } else if (topic === 'esp32/sensor4/temp') {
+        allData.sensor4Temp.push(dataPoint);
+      } else if (topic === 'esp32/sensor4/humidity') {
+        allData.sensor4Humidity.push(dataPoint);
+      }
     });
 
     // Temperature Live/Historic Toggle
@@ -513,6 +531,7 @@
       tempLiveBtn.classList.add('active');
       tempHistoricBtn.classList.remove('active');
       tempDatetimePicker.style.display = 'none';
+      isTempLive = true;
       resetTempChartToLive();
     });
 
@@ -521,6 +540,7 @@
       tempHistoricBtn.classList.add('active');
       tempLiveBtn.classList.remove('active');
       tempDatetimePicker.style.display = 'flex';
+      isTempLive = false;
     });
 
     // Reset temperature chart to live view
@@ -558,6 +578,7 @@
       humidityLiveBtn.classList.add('active');
       humidityHistoricBtn.classList.remove('active');
       humidityDatetimePicker.style.display = 'none';
+      isHumidityLive = true;
       resetHumidityChartToLive();
     });
 
@@ -566,6 +587,7 @@
       humidityHistoricBtn.classList.add('active');
       humidityLiveBtn.classList.remove('active');
       humidityDatetimePicker.style.display = 'flex';
+      isHumidityLive = false;
     });
 
     // Reset humidity chart to live view
@@ -593,27 +615,23 @@
       humidityChart.update();
     });
 
-    // Download Modal Logic
+    // Download Modal Logic (remains the same)
     const downloadBtn = document.getElementById('downloadBtn');
     const modal = document.getElementById('downloadModal');
     const closeBtn = document.querySelector('.close');
     const confirmDownload = document.getElementById('confirmDownload');
 
-    // Open download modal
     downloadBtn.addEventListener('click', () => {
       modal.style.display = 'block';
     });
 
-    // Close download modal
     closeBtn.addEventListener('click', () => {
       modal.style.display = 'none';
     });
 
-    // Handle download confirmation
     confirmDownload.addEventListener('click', () => {
       const startDateTime = new Date(document.getElementById('startDateTime').value);
       const endDateTime = new Date(document.getElementById('endDateTime').value);
-
       if (!startDateTime || !endDateTime) {
         alert("Please select both start and end date/time.");
         return;
@@ -633,14 +651,14 @@
         return;
       }
 
-      // Prepare CSV content with one row per second
+      // Prepare CSV content
       let csv = 'Serial No.,Date,Time,Sensor1_Humidity,Sensor1_Temperature,Sensor2_Humidity,Sensor2_Temperature,Sensor3_Humidity,Sensor3_Temperature,Sensor4_Humidity,Sensor4_Temperature\n';
 
       timestamps.forEach((timestamp, index) => {
         const dateStr = timestamp.toISOString().slice(0, 10);
         const timeStr = timestamp.toISOString().slice(11, 19);
 
-        // Find the closest data points for each sensor at this timestamp
+        // Find the closest data points for each sensor
         const findClosestValue = (data, targetTime) => {
           if (data.length === 0) return '';
           const closest = data.reduce((prev, curr) =>
@@ -649,7 +667,6 @@
           return closest.y;
         };
 
-        // Get values for each sensor or empty string if no data
         const sensor1Humidity = findClosestValue(allData.sensor1Humidity, timestamp) || '';
         const sensor1Temp = findClosestValue(allData.sensor1Temp, timestamp) || '';
         const sensor2Humidity = findClosestValue(allData.sensor2Humidity, timestamp) || '';
@@ -659,11 +676,10 @@
         const sensor4Humidity = findClosestValue(allData.sensor4Humidity, timestamp) || '';
         const sensor4Temp = findClosestValue(allData.sensor4Temp, timestamp) || '';
 
-        // Add row to CSV
         csv += `${index + 1},${dateStr},${timeStr},${sensor1Humidity},${sensor1Temp},${sensor2Humidity},${sensor2Temp},${sensor3Humidity},${sensor3Temp},${sensor4Humidity},${sensor4Temp}\n`;
       });
 
-      // Create and download CSV file
+      // Download CSV
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -675,5 +691,6 @@
       modal.style.display = 'none';
     });
   </script>
+
 </body>
 </html>
