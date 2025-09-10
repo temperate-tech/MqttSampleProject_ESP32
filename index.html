@@ -1,21 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Meta tags for character encoding and responsive design -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHT4x Sensor Dashboard</title>
+
+  <!-- External libraries for MQTT, charts, and date handling -->
   <script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+  <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
   <style>
+    /* Base styles for the page */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 20px;
       background-color: #f0f2f5;
     }
+
+    /* Main container for the dashboard */
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -24,11 +32,15 @@
       border-radius: 10px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
+
+    /* Dashboard title */
     h1 {
       text-align: center;
       color: #333;
       margin-bottom: 20px;
     }
+
+    /* Container for sensor widgets */
     .sensor-row {
       display: flex;
       justify-content: space-between;
@@ -36,6 +48,8 @@
       flex-wrap: nowrap; /* Prevent wrapping to the next row */
       gap: 10px; /* Add a small gap between widgets */
     }
+
+    /* Individual sensor widget styling */
     .sensor {
       flex: 1; /* Distribute space equally */
       min-width: 0; /* Prevent flex items from overflowing */
@@ -46,30 +60,52 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       box-sizing: border-box; /* Include padding in width calculation */
     }
+
+    /* Icon styling for sensors */
     .sensor-icon {
       font-size: 1.5rem; /* Slightly smaller icons */
       margin-bottom: 8px;
-    }   
+    }
+
+    /* Color for humidity icons */
+    .humidity-icon {
+      color: #4a90e2;
+    }
+
+    /* Color for temperature icons */
+    .temp-icon {
+      color: #ff6b6b;
+    }
+
+    /* Value display styling */
     .value {
       font-size: 1.5rem; /* Slightly smaller value font */
       font-weight: bold;
       margin: 8px 0;
-    }   
+    }
+
+    /* Label styling */
     .label {
       font-size: 0.8rem; /* Smaller label font */
       color: #666;
     }
+
+    /* Container for charts */
     .chart-container {
       height: 300px;
       margin-top: 20px;
       position: relative;
     }
+
+    /* Container for toggle buttons */
     .toggle-container {
       display: flex;
       justify-content: center;
       margin-bottom: 10px;
       gap: 10px;
     }
+
+    /* Toggle button styling */
     .toggle-btn {
       padding: 8px 16px;
       border: none;
@@ -77,25 +113,35 @@
       cursor: pointer;
       font-weight: 500;
     }
+
+    /* Active toggle button styling */
     .toggle-btn.active {
       background-color: #4a90e2;
       color: white;
     }
+
+    /* Inactive toggle button styling */
     .toggle-btn:not(.active) {
       background-color: #e0e0e0;
       color: #333;
     }
+
+    /* Date/time picker container */
     .datetime-picker {
       display: flex;
       justify-content: center;
       margin-bottom: 10px;
       gap: 10px;
     }
+
+    /* Date/time picker input styling */
     .datetime-picker input {
       padding: 8px;
       border: 1px solid #ddd;
       border-radius: 4px;
     }
+
+    /* Date/time picker button styling */
     .datetime-picker button {
       padding: 8px 12px;
       background-color: #4a90e2;
@@ -104,16 +150,21 @@
       border-radius: 4px;
       cursor: pointer;
     }
+
+    /* Section for each graph */
     .graph-section {
       margin-bottom: 30px;
     }
+
+    /* Graph title styling */
     .graph-title {
       text-align: center;
       font-weight: bold;
       margin-bottom: 10px;
       color: #333;
     }
-    /* Download Button */
+
+    /* Download button styling */
     .download-btn {
       background-color: #4CAF50;
       color: white;
@@ -124,7 +175,8 @@
       font-size: 16px;
       margin-bottom: 20px;
     }
-    /* Modal/Ribbon Window */
+
+    /* Modal overlay styling */
     .modal {
       display: none;
       position: fixed;
@@ -135,6 +187,8 @@
       height: 100%;
       background-color: rgba(0, 0, 0, 0.4);
     }
+
+    /* Modal content styling */
     .modal-content {
       background-color: #fefefe;
       margin: 15% auto;
@@ -143,6 +197,8 @@
       width: 50%;
       border-radius: 10px;
     }
+
+    /* Close button for modal */
     .close {
       color: #aaa;
       float: right;
@@ -150,26 +206,38 @@
       font-weight: bold;
       cursor: pointer;
     }
+
+    /* Hover effect for close button */
     .close:hover {
       color: black;
     }
+
+    /* Form group styling in modal */
     .form-group {
       margin-bottom: 15px;
     }
+
+    /* Label styling in modal */
     .form-group label {
       display: block;
       margin-bottom: 5px;
     }
+
+    /* Input field styling in modal */
     .form-group input {
       width: 100%;
       padding: 8px;
       border: 1px solid #ddd;
       border-radius: 4px;
     }
+
+    /* Download action container in modal */
     .download-action {
       text-align: right;
       margin-top: 20px;
     }
+
+    /* Confirm download button styling */
     #confirmDownload {
       background-color: #4CAF50;
       color: white;
@@ -179,24 +247,31 @@
       cursor: pointer;
       font-size: 16px;
     }
-  /* Media Query for Smaller Screens */
+
+    /* Media Query for Smaller Screens - makes widgets responsive */
     @media (max-width: 768px) {
       .sensor-row {
-        flex-wrap: wrap;
+        flex-wrap: wrap; /* Allow wrapping on small screens */
       }
       .sensor {
-        width: 48%;
+        width: 48%; /* Two widgets per row on small screens */
         margin-bottom: 10px;
       }
     }
   </style>
 </head>
 <body>
+  <!-- Main container for the dashboard -->
   <div class="container">
+    <!-- Dashboard title -->
     <h1>SHT4x Sensor Dashboard</h1>
+
+    <!-- Download data button -->
     <button class="download-btn" id="downloadBtn">Download Data</button>
+
+    <!-- Container for sensor widgets -->
     <div class="sensor-row">
-      <!-- Sensor 1 -->
+      <!-- Sensor 1 Widget -->
       <div class="sensor">
         <div class="sensor-icon humidity-icon">
           <i class="fas fa-tint"></i>
@@ -209,7 +284,8 @@
         <div class="value" id="sensor1Temp">--</div>
         <div class="label">Ambient T°C</div>
       </div>
-      <!-- Sensor 2 -->
+
+      <!-- Sensor 2 Widget -->
       <div class="sensor">
         <div class="sensor-icon humidity-icon">
           <i class="fas fa-tint"></i>
@@ -222,7 +298,8 @@
         <div class="value" id="sensor2Temp">--</div>
         <div class="label">Center T°C</div>
       </div>
-      <!-- Sensor 3 -->
+
+      <!-- Sensor 3 Widget -->
       <div class="sensor">
         <div class="sensor-icon humidity-icon">
           <i class="fas fa-tint"></i>
@@ -235,7 +312,8 @@
         <div class="value" id="sensor3Temp">--</div>
         <div class="label">Sensor 3 T°C</div>
       </div>
-      <!-- Sensor 4 -->
+
+      <!-- Sensor 4 Widget -->
       <div class="sensor">
         <div class="sensor-icon humidity-icon">
           <i class="fas fa-tint"></i>
@@ -250,7 +328,7 @@
       </div>
     </div>
 
-    <!-- Temperature Graph -->
+    <!-- Temperature Graph Section -->
     <div class="graph-section">
       <div class="graph-title">Temperature (°C)</div>
       <div class="toggle-container">
@@ -267,7 +345,7 @@
       </div>
     </div>
 
-    <!-- Humidity Graph -->
+    <!-- Humidity Graph Section -->
     <div class="graph-section">
       <div class="graph-title">Humidity (%)</div>
       <div class="toggle-container">
@@ -285,7 +363,7 @@
     </div>
   </div>
 
-  <!-- Modal for Download -->
+  <!-- Modal for Download Data -->
   <div id="downloadModal" class="modal">
     <div class="modal-content">
       <span class="close">&times;</span>
@@ -305,7 +383,7 @@
   </div>
 
   <script>
-    // MQTT Client
+    // MQTT Client Setup
     const clientId = 'dashboard_' + Math.random().toString(16).substr(2, 8);
     const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
       clientId: clientId,
@@ -365,9 +443,10 @@
       }
     });
 
-    // Update UI
+    // MQTT Connection Handler
     client.on('connect', () => {
       console.log('Connected to MQTT broker');
+      // Subscribe to all sensor topics
       client.subscribe('esp32/sensor1/temp');
       client.subscribe('esp32/sensor1/humidity');
       client.subscribe('esp32/sensor2/temp');
@@ -378,11 +457,13 @@
       client.subscribe('esp32/sensor4/humidity');
     });
 
+    // Handle incoming MQTT messages
     client.on('message', (topic, message) => {
       const value = parseFloat(message.toString());
       const now = new Date();
       const dataPoint = { x: now, y: value };
 
+      // Update the appropriate sensor display and chart based on the topic
       if (topic === 'esp32/sensor1/temp') {
         document.getElementById('sensor1Temp').textContent = value.toFixed(2);
         tempChart.data.datasets[0].data.push(dataPoint);
@@ -416,15 +497,18 @@
         humidityChart.data.datasets[3].data.push(dataPoint);
         allData.sensor4Humidity.push(dataPoint);
       }
+
+      // Update charts
       tempChart.update();
       humidityChart.update();
     });
 
-    // Toggle Live/Historic View for Temperature
+    // Temperature Live/Historic Toggle
     const tempLiveBtn = document.getElementById('tempLiveBtn');
     const tempHistoricBtn = document.getElementById('tempHistoricBtn');
     const tempDatetimePicker = document.getElementById('tempDatetimePicker');
 
+    // Show live temperature data
     tempLiveBtn.addEventListener('click', () => {
       tempLiveBtn.classList.add('active');
       tempHistoricBtn.classList.remove('active');
@@ -432,18 +516,20 @@
       resetTempChartToLive();
     });
 
+    // Show historic temperature data
     tempHistoricBtn.addEventListener('click', () => {
       tempHistoricBtn.classList.add('active');
       tempLiveBtn.classList.remove('active');
       tempDatetimePicker.style.display = 'flex';
     });
 
+    // Reset temperature chart to live view
     function resetTempChartToLive() {
       tempChart.data.datasets.forEach(dataset => dataset.data = []);
       tempChart.update();
     }
 
-    // Apply Date Range for Temperature Historic View
+    // Apply date range for temperature historic view
     document.getElementById('applyTempDateRange').addEventListener('click', () => {
       const startDateTime = new Date(document.getElementById('tempStartDateTime').value);
       const endDateTime = new Date(document.getElementById('tempEndDateTime').value);
@@ -453,6 +539,7 @@
         return;
       }
 
+      // Filter data by selected date range
       tempChart.data.datasets[0].data = allData.sensor1Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
       tempChart.data.datasets[1].data = allData.sensor2Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
       tempChart.data.datasets[2].data = allData.sensor3Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
@@ -461,11 +548,12 @@
       tempChart.update();
     });
 
-    // Toggle Live/Historic View for Humidity
+    // Humidity Live/Historic Toggle
     const humidityLiveBtn = document.getElementById('humidityLiveBtn');
     const humidityHistoricBtn = document.getElementById('humidityHistoricBtn');
     const humidityDatetimePicker = document.getElementById('humidityDatetimePicker');
 
+    // Show live humidity data
     humidityLiveBtn.addEventListener('click', () => {
       humidityLiveBtn.classList.add('active');
       humidityHistoricBtn.classList.remove('active');
@@ -473,18 +561,20 @@
       resetHumidityChartToLive();
     });
 
+    // Show historic humidity data
     humidityHistoricBtn.addEventListener('click', () => {
       humidityHistoricBtn.classList.add('active');
       humidityLiveBtn.classList.remove('active');
       humidityDatetimePicker.style.display = 'flex';
     });
 
+    // Reset humidity chart to live view
     function resetHumidityChartToLive() {
       humidityChart.data.datasets.forEach(dataset => dataset.data = []);
       humidityChart.update();
     }
 
-    // Apply Date Range for Humidity Historic View
+    // Apply date range for humidity historic view
     document.getElementById('applyHumidityDateRange').addEventListener('click', () => {
       const startDateTime = new Date(document.getElementById('humidityStartDateTime').value);
       const endDateTime = new Date(document.getElementById('humidityEndDateTime').value);
@@ -494,6 +584,7 @@
         return;
       }
 
+      // Filter data by selected date range
       humidityChart.data.datasets[0].data = allData.sensor1Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
       humidityChart.data.datasets[1].data = allData.sensor2Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
       humidityChart.data.datasets[2].data = allData.sensor3Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
@@ -508,14 +599,17 @@
     const closeBtn = document.querySelector('.close');
     const confirmDownload = document.getElementById('confirmDownload');
 
+    // Open download modal
     downloadBtn.addEventListener('click', () => {
       modal.style.display = 'block';
     });
 
+    // Close download modal
     closeBtn.addEventListener('click', () => {
       modal.style.display = 'none';
     });
 
+    // Handle download confirmation
     confirmDownload.addEventListener('click', () => {
       const startDateTime = new Date(document.getElementById('startDateTime').value);
       const endDateTime = new Date(document.getElementById('endDateTime').value);
@@ -539,14 +633,14 @@
         return;
       }
 
-      // Prepare CSV content
+      // Prepare CSV content with one row per second
       let csv = 'Serial No.,Date,Time,Sensor1_Humidity,Sensor1_Temperature,Sensor2_Humidity,Sensor2_Temperature,Sensor3_Humidity,Sensor3_Temperature,Sensor4_Humidity,Sensor4_Temperature\n';
 
       timestamps.forEach((timestamp, index) => {
         const dateStr = timestamp.toISOString().slice(0, 10);
         const timeStr = timestamp.toISOString().slice(11, 19);
 
-        // Find the closest data points for each sensor
+        // Find the closest data points for each sensor at this timestamp
         const findClosestValue = (data, targetTime) => {
           if (data.length === 0) return '';
           const closest = data.reduce((prev, curr) =>
@@ -555,6 +649,7 @@
           return closest.y;
         };
 
+        // Get values for each sensor or empty string if no data
         const sensor1Humidity = findClosestValue(allData.sensor1Humidity, timestamp) || '';
         const sensor1Temp = findClosestValue(allData.sensor1Temp, timestamp) || '';
         const sensor2Humidity = findClosestValue(allData.sensor2Humidity, timestamp) || '';
@@ -564,10 +659,11 @@
         const sensor4Humidity = findClosestValue(allData.sensor4Humidity, timestamp) || '';
         const sensor4Temp = findClosestValue(allData.sensor4Temp, timestamp) || '';
 
+        // Add row to CSV
         csv += `${index + 1},${dateStr},${timeStr},${sensor1Humidity},${sensor1Temp},${sensor2Humidity},${sensor2Temp},${sensor3Humidity},${sensor3Temp},${sensor4Humidity},${sensor4Temp}\n`;
       });
 
-      // Download CSV
+      // Create and download CSV file
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
