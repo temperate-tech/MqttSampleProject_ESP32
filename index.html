@@ -8,15 +8,26 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
+    :root {
+      --primary: #4a6fa5;
+      --secondary: #166088;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --success: #28a745;
+      --card-bg: #ffffff;
+      --text-color: #333;
+    }
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 20px;
       background-color: #f5f7fa;
+      color: var(--text-color);
     }
     .container {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
       background: white;
       padding: 20px;
@@ -25,153 +36,115 @@
     }
     h1 {
       text-align: center;
-      color: #333;
+      color: var(--primary);
+      margin-bottom: 20px;
     }
-    .sensor-card {
+    .sensor-row {
       display: flex;
       justify-content: space-between;
       margin-bottom: 20px;
       flex-wrap: wrap;
     }
-    .sensor {
+    .sensor-card {
       width: 23%;
-      background: #f8f9fa;
+      background: var(--card-bg);
       padding: 15px;
       border-radius: 8px;
       text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       margin-bottom: 10px;
     }
-    .value {
+    .sensor-icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      color: var(--primary);
+    }
+    .sensor-value {
       font-size: 2rem;
       font-weight: bold;
       margin: 10px 0;
+      color: var(--dark);
+    }
+    .sensor-label {
+      font-size: 0.9rem;
+      color: #666;
     }
     .chart-container {
       height: 300px;
       margin-top: 20px;
+      background: var(--card-bg);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    .download-btn {
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
+    .controls {
+      display: flex;
+      justify-content: space-between;
       margin-bottom: 20px;
+      align-items: center;
     }
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.4);
+    .date-picker {
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
-    .modal-content {
-      background-color: #fefefe;
-      margin: 15% auto;
-      padding: 20px;
-      border: 1px solid #888;
-      width: 50%;
-      border-radius: 10px;
-    }
-    .close {
-      color: #aaa;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .close:hover {
-      color: black;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 5px;
-    }
-    .form-group input {
-      width: 100%;
+    .date-picker input {
       padding: 8px;
       border: 1px solid #ddd;
       border-radius: 4px;
     }
-    .download-action {
-      text-align: right;
-      margin-top: 20px;
-    }
-    #confirmDownload {
-      background-color: #4CAF50;
+    .date-picker button {
+      padding: 8px 15px;
+      background-color: var(--primary);
       color: white;
-      padding: 10px 15px;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
-      font-size: 16px;
+    }
+    @media (max-width: 768px) {
+      .sensor-card {
+        width: 48%;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>SHT4x Sensor Dashboard</h1>
-    <button class="download-btn" id="downloadBtn">Download Data</button>
-    <div class="sensor-card">
-      <div class="sensor">
-        <h2>Sensor 1</h2>
-        <div class="value" id="sensor1Temp">--</div>
-        <div>Temperature (°C)</div>
-        <div class="value" id="sensor1Humidity">--</div>
-        <div>Humidity (%)</div>
+    <div class="sensor-row">
+      <div class="sensor-card">
+        <div class="sensor-icon"><i class="fas fa-tint"></i></div>
+        <div class="sensor-value" id="sensor1Humidity">--</div>
+        <div class="sensor-label">Sensor 1 RH%</div>
       </div>
-      <div class="sensor">
-        <h2>Sensor 2</h2>
-        <div class="value" id="sensor2Temp">--</div>
-        <div>Temperature (°C)</div>
-        <div class="value" id="sensor2Humidity">--</div>
-        <div>Humidity (%)</div>
+      <div class="sensor-card">
+        <div class="sensor-icon"><i class="fas fa-tint"></i></div>
+        <div class="sensor-value" id="sensor2Humidity">--</div>
+        <div class="sensor-label">Sensor 2 RH%</div>
       </div>
-      <div class="sensor">
-        <h2>Sensor 3</h2>
-        <div class="value" id="sensor3Temp">--</div>
-        <div>Temperature (°C)</div>
-        <div class="value" id="sensor3Humidity">--</div>
-        <div>Humidity (%)</div>
+      <div class="sensor-card">
+        <div class="sensor-icon"><i class="fas fa-thermometer-half"></i></div>
+        <div class="sensor-value" id="sensor1Temp">--</div>
+        <div class="sensor-label">Sensor 1 °C</div>
       </div>
-      <div class="sensor">
-        <h2>Sensor 4</h2>
-        <div class="value" id="sensor4Temp">--</div>
-        <div>Temperature (°C)</div>
-        <div class="value" id="sensor4Humidity">--</div>
-        <div>Humidity (%)</div>
+      <div class="sensor-card">
+        <div class="sensor-icon"><i class="fas fa-thermometer-half"></i></div>
+        <div class="sensor-value" id="sensor2Temp">--</div>
+        <div class="sensor-label">Sensor 2 °C</div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="date-picker">
+        <input type="datetime-local" id="startDateTime">
+        <input type="datetime-local" id="endDateTime">
+        <button id="filterBtn">Filter</button>
       </div>
     </div>
     <div class="chart-container">
       <canvas id="sensorChart"></canvas>
     </div>
   </div>
-  <!-- Modal/Ribbon Window -->
-  <div id="downloadModal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h2>Select Date and Time Range</h2>
-      <div class="form-group">
-        <label for="startDateTime">Start Date and Time:</label>
-        <input type="datetime-local" id="startDateTime">
-      </div>
-      <div class="form-group">
-        <label for="endDateTime">End Date and Time:</label>
-        <input type="datetime-local" id="endDateTime">
-      </div>
-      <div class="download-action">
-        <button id="confirmDownload">Download</button>
-      </div>
-    </div>
-  </div>
+
   <script>
     // MQTT Client
     const clientId = 'dashboard_' + Math.random().toString(16).substr(2, 8);
@@ -180,31 +153,43 @@
       keepalive: 60,
       clean: true,
     });
+
     // Chart Setup
     const ctx = document.getElementById('sensorChart').getContext('2d');
     const chart = new Chart(ctx, {
       type: 'line',
       data: {
         datasets: [
-          { label: 'Sensor 1 Temp', borderColor: 'rgb(255, 99, 132)', data: [] },
-          { label: 'Sensor 1 Humidity', borderColor: 'rgb(54, 162, 235)', data: [] },
-          { label: 'Sensor 2 Temp', borderColor: 'rgb(75, 192, 192)', data: [] },
-          { label: 'Sensor 2 Humidity', borderColor: 'rgb(153, 102, 255)', data: [] },
-          { label: 'Sensor 3 Temp', borderColor: 'rgb(255, 159, 64)', data: [] },
-          { label: 'Sensor 3 Humidity', borderColor: 'rgb(255, 205, 86)', data: [] },
-          { label: 'Sensor 4 Temp', borderColor: 'rgb(128, 0, 128)', data: [] },
-          { label: 'Sensor 4 Humidity', borderColor: 'rgb(0, 128, 0)', data: [] }
+          { label: 'Sensor 1 Temp', borderColor: 'rgb(255, 99, 132)', data: [], tension: 0.1 },
+          { label: 'Sensor 1 Humidity', borderColor: 'rgb(54, 162, 235)', data: [], tension: 0.1 },
+          { label: 'Sensor 2 Temp', borderColor: 'rgb(75, 192, 192)', data: [], tension: 0.1 },
+          { label: 'Sensor 2 Humidity', borderColor: 'rgb(153, 102, 255)', data: [], tension: 0.1 },
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { type: 'time', time: { unit: 'minute' }, title: { display: true, text: 'Time' } },
-          y: { title: { display: true, text: 'Value' } }
+          x: {
+            type: 'time',
+            time: { unit: 'minute' },
+            title: { display: true, text: 'Time' }
+          },
+          y: {
+            title: { display: true, text: 'Value' }
+          }
         }
       }
     });
+
+    // Store all data points
+    const allData = {
+      sensor1Temp: [],
+      sensor1Humidity: [],
+      sensor2Temp: [],
+      sensor2Humidity: [],
+    };
+
     // Update UI
     client.on('connect', () => {
       console.log('Connected to MQTT broker');
@@ -212,96 +197,50 @@
       client.subscribe('esp32/sensor1/humidity');
       client.subscribe('esp32/sensor2/temp');
       client.subscribe('esp32/sensor2/humidity');
-      client.subscribe('esp32/sensor3/temp');
-      client.subscribe('esp32/sensor3/humidity');
-      client.subscribe('esp32/sensor4/temp');
-      client.subscribe('esp32/sensor4/humidity');
     });
+
     client.on('message', (topic, message) => {
       const value = parseFloat(message.toString());
       const now = new Date();
       if (topic === 'esp32/sensor1/temp') {
         document.getElementById('sensor1Temp').textContent = value.toFixed(2);
-        chart.data.datasets[0].data.push({ x: now, y: value });
+        allData.sensor1Temp.push({ x: now, y: value });
       } else if (topic === 'esp32/sensor1/humidity') {
         document.getElementById('sensor1Humidity').textContent = value.toFixed(2);
-        chart.data.datasets[1].data.push({ x: now, y: value });
+        allData.sensor1Humidity.push({ x: now, y: value });
       } else if (topic === 'esp32/sensor2/temp') {
         document.getElementById('sensor2Temp').textContent = value.toFixed(2);
-        chart.data.datasets[2].data.push({ x: now, y: value });
+        allData.sensor2Temp.push({ x: now, y: value });
       } else if (topic === 'esp32/sensor2/humidity') {
         document.getElementById('sensor2Humidity').textContent = value.toFixed(2);
-        chart.data.datasets[3].data.push({ x: now, y: value });
-      } else if (topic === 'esp32/sensor3/temp') {
-        document.getElementById('sensor3Temp').textContent = value.toFixed(2);
-        chart.data.datasets[4].data.push({ x: now, y: value });
-      } else if (topic === 'esp32/sensor3/humidity') {
-        document.getElementById('sensor3Humidity').textContent = value.toFixed(2);
-        chart.data.datasets[5].data.push({ x: now, y: value });
-      } else if (topic === 'esp32/sensor4/temp') {
-        document.getElementById('sensor4Temp').textContent = value.toFixed(2);
-        chart.data.datasets[6].data.push({ x: now, y: value });
-      } else if (topic === 'esp32/sensor4/humidity') {
-        document.getElementById('sensor4Humidity').textContent = value.toFixed(2);
-        chart.data.datasets[7].data.push({ x: now, y: value });
+        allData.sensor2Humidity.push({ x: now, y: value });
       }
+      updateChart();
+    });
+
+    // Update chart with all data
+    function updateChart() {
+      chart.data.datasets[0].data = allData.sensor1Temp;
+      chart.data.datasets[1].data = allData.sensor1Humidity;
+      chart.data.datasets[2].data = allData.sensor2Temp;
+      chart.data.datasets[3].data = allData.sensor2Humidity;
       chart.update();
-    });
-    // Download Modal Logic
-    const downloadBtn = document.getElementById('downloadBtn');
-    const modal = document.getElementById('downloadModal');
-    const closeBtn = document.querySelector('.close');
-    const confirmDownload = document.getElementById('confirmDownload');
-    downloadBtn.addEventListener('click', () => {
-      modal.style.display = 'block';
-    });
-    closeBtn.addEventListener('click', () => {
-      modal.style.display = 'none';
-    });
-    confirmDownload.addEventListener('click', () => {
+    }
+
+    // Filter chart by date range
+    document.getElementById('filterBtn').addEventListener('click', () => {
       const startDateTime = new Date(document.getElementById('startDateTime').value);
       const endDateTime = new Date(document.getElementById('endDateTime').value);
       if (!startDateTime || !endDateTime) {
         alert("Please select both start and end date/time.");
         return;
       }
-      // Filter and organize data by timestamp
-      const timestamps = [...new Set(
-        chart.data.datasets.flatMap(dataset =>
-          dataset.data
-            .filter(point => point.x >= startDateTime && point.x <= endDateTime)
-            .map(point => point.x.getTime())
-        )
-      )].sort((a, b) => a - b);
-      if (timestamps.length === 0) {
-        alert("No data available for the selected range.");
-        return;
-      }
-      // Prepare CSV content
-      let csv = 'Serial No.,Date,Time,Sensor1_Humidity,Sensor1_Temperature,Sensor2_Humidity,Sensor2_Temperature,Sensor3_Humidity,Sensor3_Temperature,Sensor4_Humidity,Sensor4_Temperature\n';
-      timestamps.forEach((timestamp, index) => {
-        const date = new Date(timestamp);
-        const dateStr = date.toISOString().slice(0, 10);
-        const timeStr = date.toISOString().slice(11, 19);
-        const sensor1Humidity = chart.data.datasets[1].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor1Temp = chart.data.datasets[0].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor2Humidity = chart.data.datasets[3].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor2Temp = chart.data.datasets[2].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor3Humidity = chart.data.datasets[5].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor3Temp = chart.data.datasets[4].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor4Humidity = chart.data.datasets[7].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor4Temp = chart.data.datasets[6].data.find(point => point.x.getTime() === timestamp)?.y || '';
-        csv += `${index + 1},${dateStr},${timeStr},${sensor1Humidity},${sensor1Temp},${sensor2Humidity},${sensor2Temp},${sensor3Humidity},${sensor3Temp},${sensor4Humidity},${sensor4Temp}\n`;
-      });
-      // Download CSV
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `sensor_data_${startDateTime.toISOString().slice(0, 10)}_to_${endDateTime.toISOString().slice(0, 10)}.csv`;
-      a.click();
-      // Close modal
-      modal.style.display = 'none';
+      // Filter data
+      chart.data.datasets[0].data = allData.sensor1Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+      chart.data.datasets[1].data = allData.sensor1Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+      chart.data.datasets[2].data = allData.sensor2Temp.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+      chart.data.datasets[3].data = allData.sensor2Humidity.filter(point => point.x >= startDateTime && point.x <= endDateTime);
+      chart.update();
     });
   </script>
 </body>
