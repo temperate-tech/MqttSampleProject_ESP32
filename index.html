@@ -33,33 +33,30 @@
       display: flex;
       justify-content: space-between;
       margin-bottom: 20px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap; /* Prevent wrapping to the next row */
+      gap: 10px; /* Add a small gap between widgets */
     }
     .sensor {
-      width: 23%;
+      flex: 1; /* Distribute space equally */
+      min-width: 0; /* Prevent flex items from overflowing */
       background: #f8f9fa;
       padding: 15px;
       border-radius: 8px;
       text-align: center;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box; /* Include padding in width calculation */
     }
     .sensor-icon {
-      font-size: 2rem;
-      margin-bottom: 10px;
-    }
-    .humidity-icon {
-      color: #4a90e2;
-    }
-    .temp-icon {
-      color: #ff6b6b;
-    }
+      font-size: 1.5rem; /* Slightly smaller icons */
+      margin-bottom: 8px;
+    }   
     .value {
-      font-size: 1.5rem;
+      font-size: 1.5rem; /* Slightly smaller value font */
       font-weight: bold;
-      margin: 10px 0;
-    }
+      margin: 8px 0;
+    }   
     .label {
-      font-size: 0.9rem;
+      font-size: 0.8rem; /* Smaller label font */
       color: #666;
     }
     .chart-container {
@@ -512,19 +509,20 @@
     confirmDownload.addEventListener('click', () => {
       const startDateTime = new Date(document.getElementById('startDateTime').value);
       const endDateTime = new Date(document.getElementById('endDateTime').value);
+
       if (!startDateTime || !endDateTime) {
         alert("Please select both start and end date/time.");
         return;
       }
 
-      // Filter and organize data by timestamp
-      const timestamps = [...new Set(
-        Object.values(allData).flatMap(dataset =>
-          dataset
-            .filter(point => point.x >= startDateTime && point.x <= endDateTime)
-            .map(point => point.x.getTime())
-        )
-      )].sort((a, b) => a - b);
+      // Generate timestamps for each second in the selected range
+      const timestamps = [];
+      const currentTime = new Date(startDateTime.getTime());
+
+      while (currentTime <= endDateTime) {
+        timestamps.push(new Date(currentTime));
+        currentTime.setSeconds(currentTime.getSeconds() + 1);
+      }
 
       if (timestamps.length === 0) {
         alert("No data available for the selected range.");
@@ -535,18 +533,26 @@
       let csv = 'Serial No.,Date,Time,Sensor1_Humidity,Sensor1_Temperature,Sensor2_Humidity,Sensor2_Temperature,Sensor3_Humidity,Sensor3_Temperature,Sensor4_Humidity,Sensor4_Temperature\n';
 
       timestamps.forEach((timestamp, index) => {
-        const date = new Date(timestamp);
-        const dateStr = date.toISOString().slice(0, 10);
-        const timeStr = date.toISOString().slice(11, 19);
+        const dateStr = timestamp.toISOString().slice(0, 10);
+        const timeStr = timestamp.toISOString().slice(11, 19);
 
-        const sensor1Humidity = allData.sensor1Humidity.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor1Temp = allData.sensor1Temp.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor2Humidity = allData.sensor2Humidity.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor2Temp = allData.sensor2Temp.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor3Humidity = allData.sensor3Humidity.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor3Temp = allData.sensor3Temp.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor4Humidity = allData.sensor4Humidity.find(point => point.x.getTime() === timestamp)?.y || '';
-        const sensor4Temp = allData.sensor4Temp.find(point => point.x.getTime() === timestamp)?.y || '';
+        // Find the closest data points for each sensor
+        const findClosestValue = (data, targetTime) => {
+          if (data.length === 0) return '';
+          const closest = data.reduce((prev, curr) =>
+            (Math.abs(curr.x - targetTime) < Math.abs(prev.x - targetTime) ? curr : prev)
+          );
+          return closest.y;
+        };
+
+        const sensor1Humidity = findClosestValue(allData.sensor1Humidity, timestamp) || '';
+        const sensor1Temp = findClosestValue(allData.sensor1Temp, timestamp) || '';
+        const sensor2Humidity = findClosestValue(allData.sensor2Humidity, timestamp) || '';
+        const sensor2Temp = findClosestValue(allData.sensor2Temp, timestamp) || '';
+        const sensor3Humidity = findClosestValue(allData.sensor3Humidity, timestamp) || '';
+        const sensor3Temp = findClosestValue(allData.sensor3Temp, timestamp) || '';
+        const sensor4Humidity = findClosestValue(allData.sensor4Humidity, timestamp) || '';
+        const sensor4Temp = findClosestValue(allData.sensor4Temp, timestamp) || '';
 
         csv += `${index + 1},${dateStr},${timeStr},${sensor1Humidity},${sensor1Temp},${sensor2Humidity},${sensor2Temp},${sensor3Humidity},${sensor3Temp},${sensor4Humidity},${sensor4Temp}\n`;
       });
