@@ -1,187 +1,193 @@
 # MqttSampleProject_ESP32
 A sample project to publish data onto an mqtt host to get familiarised with the environment
 
-# SHT4x ESP32 Multi-Sensor Dashboard & Data Logger
+# ESP32 Multi-SHT4x Sensor MQTT Dashboard
 
-## Overview
-
-This project enables you to monitor temperature and humidity from up to four SHT4x sensors using an ESP32 dev module. Sensor readings are published to MQTT topics and also sent to a local backend server, which stores data in a SQLite database and serves a web dashboard for live and historic visualization.
+This project enables the ESP32 to read from up to four Adafruit SHT4x temperature/humidity sensors, push real-time data to MQTT and a local backend server, and visualize sensor readings on a web dashboard with historic data download support.
 
 ---
 
 ## Hardware Requirements
 
-- **ESP32 Dev Module**
-- **4 × SHT4x Sensors**
-- **PCA9685/PCA9548A I2C Multiplexer** (for multiple SHT4x sensors)
-- **WiFi Router** (for MQTT and backend communication)
+- **ESP32 Dev Module:** Any standard ESP32 development board.
+- **Adafruit SHT4x Sensors:** Up to 4 SHT4x sensors (humidity/temperature).
+- **I2C Bus Multiplexer:** Required for connecting multiple sensors to ESP32 (e.g. PCA9546).
+- **Jumper wires, breadboard, 3.3V power** (as required for your setup).
 
 ---
 
 ## Software Requirements
 
-- **Arduino IDE**
-  - ESP32 board support (install via Boards Manager)
-  - Required libraries:
-    - [WiFi.h](https://github.com/espressif/arduino-esp32)
-    - [PubSubClient](https://github.com/knolleary/pubsubclient)
-    - [HTTPClient](https://github.com/espressif/arduino-esp32)
-    - [ArduinoOTA](https://github.com/arduino-libraries/ArduinoOTA)
-    - [Adafruit SHT4x](https://github.com/adafruit/Adafruit_SHT4x)
-    - [Wire.h](https://github.com/espressif/arduino-esp32)
-- **Node.js** (for backend server)
-- **VSCode** or any code editor
+### 1. **Arduino IDE Setup**
+
+- **Install Arduino IDE:** Download from [arduino.cc](https://www.arduino.cc/en/software).
+- **Install Board Support:**
+  - Go to `Tools > Board > Boards Manager` and install "esp32" by Espressif.
+- **Required Libraries:**
+  - Open `Tools > Manage Libraries` and install:
+    - **Adafruit SHT4x** (`Adafruit_SHT4x`)
+    - **WiFi**
+    - **PubSubClient**
+    - **HTTPClient**
+    - **ArduinoOTA**
+- **OTA (Over-The-Air) Update:**
+  - Configure ArduinoOTA for wireless firmware updates.
+  - Set hostname and password in code for security.
+
+### 2. **Node.js Backend Setup**
+
+#### a. **Install Node.js (LTS)**
+- Download and install from [nodejs.org](https://nodejs.org/).
+
+#### b. **Clone This Repository**
+- Create a directory (e.g., `C:\server-backend\SHT4x_ESP32`)
+- Clone the repo inside this folder.
+
+#### c. **Setup Project Structure**
+- In `SHT4x_ESP32`, create a subfolder named `public`.
+- Place your `index.html` dashboard file inside `public`.
+
+#### d. **Install Dependencies**
+- Open VSCode in `SHT4x_ESP32`.
+- Open a terminal and run:
+  ```sh
+  npm init -y
+  npm install express sqlite3 cors
+  ```
+
+#### e. **Create and Run the Server**
+- Save the provided backend code (see below) as `server.js` in `SHT4x_ESP32`.
+- Start the server:
+  ```sh
+  node server.js
+  ```
+- The dashboard will be available at:  
+  `http://<Your-localhost-IP>:<PORT>/`  
+  (Default: `http://192.168.1.25:5000/`)
 
 ---
 
-## Setup Instructions
+## Network Configuration for Local Server
 
-### 1. Arduino IDE & ESP32 Firmware
+1. **Set Static IP for Host Machine:**
+   - Open Control Panel → Network and Internet → Network and Sharing Center.
+   - Click "Change adapter settings" (left panel).
+   - Right-click your Wi-Fi adapter → Properties.
+   - Select "Internet Protocol Version 4 (TCP/IPv4)" → Properties.
+   - Check "Use the following IP address".
+   - Enter desired static IP, subnet mask, and default gateway:
+     - **How to find your router's IP and subnet mask:**
+       - Open Command Prompt, type `ipconfig`, note "Default Gateway" and "Subnet Mask".
+     - **How to get DNS info:**
+       - Also in `ipconfig` output, note "DNS Servers".
+   - Click OK, wait for reconnection.
+   - Verify your IP has changed with `ipconfig`.
 
-1. **Install Arduino IDE**  
-   Download from [arduino.cc](https://www.arduino.cc/en/software).
+2. **Update IP Address in Code:**
+   - Replace any instance of the local IP in your Arduino sketch, index.html, and server.js with your new static IP.
 
-2. **Install ESP32 Board Support**  
-   - Open Arduino IDE → Preferences → Add URL:  
-     `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
-   - Tools → Board Manager → Install "esp32".
-
-3. **Install Required Libraries**  
-   - Arduino IDE → Tools → Manage Libraries → Search and install:
-     - PubSubClient
-     - Adafruit SHT4x
-     - ArduinoOTA
-
-4. **OTA Setup**  
-   - Configure OTA updates in your code using `ArduinoOTA` library.
-   - Set OTA hostname and password.
-
-5. **Hardware Connections**
-   - Connect SHT4x sensors to ESP32 via I2C multiplexer.
-   - Double-check wiring and addresses.
-
-6. **Configure WiFi & MQTT**
-   - Set your WiFi SSID and password in the code.
-   - Set MQTT broker (e.g., HiveMQ public broker).
-
-7. **Data Publishing**
-   - Sensor data is published to MQTT topics (e.g., `esp32/sensor1/temp`).
-   - Data also sent via HTTP POST to local backend.
-
-8. **Upload Code**
-   - Select correct board and port in Arduino IDE.
-   - Upload sketch to ESP32.
+3. **Configure Windows Firewall:**
+   - Open "Windows Defender Firewall with Advanced Security" from Start menu.
+   - Go to "Inbound Rules" → "New Rule".
+   - Select "Port" → TCP → Specific local port (e.g., 5000).
+   - Allow the connection.
+   - Check all profiles (Domain, Private, Public).
+   - Name the rule (e.g., "Node.js Server port 5000"), add description if needed.
+   - Finish.
 
 ---
 
-### 2. Backend Server (Node.js + SQLite)
+## ESP32 Firmware Upload
 
-1. **Clone Repository**
-   ```sh
-   mkdir server-backend
-   cd server-backend
-   mkdir SHT4x_ESP32
-   cd SHT4x_ESP32
-   git clone <this-repo-url> .
-   ```
-
-2. **Create Public Folder for Web Dashboard**
-   ```sh
-   mkdir public
-   # Copy your index.html dashboard to 'public' folder
-   cp path/to/index.html public/
-   ```
-
-3. **Setup Node.js Backend**
-   - In `SHT4x_ESP32` folder:
-     ```sh
-     npm init -y
-     npm install express sqlite3 cors
-     ```
-   - Save backend code as `server.js` in this folder.
-
-4. **Run Backend**
-   ```sh
-   node server.js
-   ```
-   - Server will run on port 5000 (default).
+- Connect your ESP32 to PC via USB.
+- Select correct COM port and board in Arduino IDE.
+- Upload the code.
+- If using OTA, subsequent uploads can be done wirelessly.
 
 ---
 
-### 3. Windows Network & Firewall Setup
+## Commit Changes
 
-1. **Assign Static IP**
-   - Control Panel → Network and Internet → Network and Sharing Center
-   - Change adapter settings → Wi-Fi Adapter → Properties → IPv4
-   - Check "Use the following IP address"
-     - Enter desired static IP, subnet mask, default gateway, DNS info.
-     - Find subnet mask & gateway using `ipconfig` in CMD.
-     - Get router IP for gateway by logging into router admin panel.
-   - Click "OK" and reconnect WiFi.
-   - Verify new IP using `ipconfig`.
-
-2. **Update IP in Code**
-   - Replace all occurrences of old IP address in Arduino code, `index.html`, and `server.js` with your new static IP.
-
-3. **Configure Windows Firewall**
-   - "Windows Defender Firewall with Advanced Security" → Inbound Rules → New Rule
-   - Rule Type: Port → TCP, specific local port (e.g., 5000)
-   - Allow connection → Check all profiles (Domain, Private, Public)
-   - Name: "Node.js Server port 5000" (add description if needed)
+- If you modified `index.html`, commit the changes via Git:
+  ```sh
+  git add public/index.html
+  git commit -m "Update dashboard UI"
+  git push
+  ```
 
 ---
 
-### 4. Dashboard Usage
+## API Usage & Testing
 
-- **Access Dashboard:**  
-  Open browser at:  
-  `http://<Your-localhost-IP>:<Your-port>/`  
-  Example: `http://192.168.1.25:5000/`
+### 1. **Sensor Data Push**
 
-- **Features:**
-  - Live temperature & humidity widgets for 4 sensors.
-  - Interactive graphs (live & historic).
-  - Date/time picker for historic data.
-  - Download CSV of historic data by date/time range.
-  - Responsive design for mobile/desktop.
-  - Uses MQTT for real-time updates.
+- ESP32 firmware POSTs sensor data to your backend at:
+  ```
+  http://<your-static-IP>:5000/api/sensor-data
+  ```
+- Each record includes: `sensorId`, `temperature`, `humidity`, `timestamp`.
+
+### 2. **API Testing with Postman**
+
+- **Install Postman:** [Download here](https://www.postman.com/downloads/)
+- **Test POST Endpoint:**
+  - Set method to POST.
+  - URL: `http://<your-static-IP>:5000/api/sensor-data`
+  - Select "Body" → "raw" → "JSON".
+  - Example payload:
+    ```json
+    {
+      "sensorId": "sensor1",
+      "temperature": 25.3,
+      "humidity": 70.1
+    }
+    ```
+  - Click "Send". You should receive `{ message: "Data saved successfully" }`.
+
+- **Test GET Endpoint (Historic Data):**
+  - Set method to GET.
+  - URL:  
+    `http://<your-static-IP>:5000/api/sensor-data?sensorId=sensor1&startDate=2024-09-10T00:00:00&endDate=2024-09-10T23:59:59`
+  - Click "Send". You should see a list of records.
 
 ---
 
-## How Data Flows
+## Dashboard Features
 
-1. **ESP32 reads SHT4x sensors** (via I2C multiplexer, up to 4 sensors).
-2. **Publishes data to MQTT broker** (`broker.hivemq.com`).
-3. **Sends data via HTTP POST** to backend (`/api/sensor-data`).
-4. **Backend saves data in SQLite database** (`sensor_data.db`).
-5. **Dashboard fetches live data via MQTT** and historic data via HTTP GET from backend.
-6. **Dashboard allows CSV download** for selected date/time ranges.
+- Displays live readings for 4 sensors (temp & humidity).
+- Interactive graphs (live/historic) using Chart.js.
+- Download historic data as CSV for custom date/time range.
+- Responsive, modern UI.
 
 ---
 
 ## Troubleshooting
 
-- **ESP32 not connecting to WiFi:** Double-check SSID/password, router settings, and static IP configuration.
-- **No dashboard data:** Check that Node.js server is running and firewall allows port 5000.
-- **Historic data missing:** Ensure ESP32 is publishing HTTP POST data and SQLite database is writable.
-- **OTA issues:** Make sure ESP32 and PC are on the same network; check OTA password.
+- Ensure all IP addresses in code and dashboard match your static local IP.
+- Confirm Node.js server is running (`node server.js`).
+- Check firewall rules for required ports.
+- Use `ipconfig` to verify network settings.
+- MQTT broker should be accessible from both ESP32 and dashboard.
+
+---
+
+## Useful Links
+
+- [ESP32 Board Support](https://github.com/espressif/arduino-esp32)
+- [Adafruit SHT4x Library](https://github.com/adafruit/Adafruit_SHT4x)
+- [HiveMQ Public MQTT Broker](https://www.hivemq.com/public-mqtt-broker/)
+- [Node.js](https://nodejs.org/)
+- [Postman](https://www.postman.com/)
 
 ---
 
 ## License
 
-MIT License (or as specified in the repository).
-
-## Author
-
-[temperate-tech](https://github.com/temperate-tech)
+MIT
 
 ---
 
-## Quick Links
+## Credits
 
-- [ESP32 documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/)
-- [Adafruit SHT4x Library](https://github.com/adafruit/Adafruit_SHT4x)
-- [Node.js Express](https://expressjs.com/)
-- [Chart.js](https://www.chartjs.org/)
-- [HiveMQ MQTT Broker](https://www.hivemq.com/public-mqtt-broker/)
+Developed by [temperate-tech](https://github.com/temperate-tech)
+
