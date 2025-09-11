@@ -269,12 +269,12 @@ To run the backend server and dashboard over HTTPS (recommended for modern brows
 - **index.html**:  
   Update historic data fetch URLs to use HTTPS and port 5001 (if changed).
   ```js
-  const url = `https://192.168.1.25:5001/api/sensor-data?sensorId=sensor${sensorId}&startDate=${startDate}&endDate=${endDate}`;
+  const url = `https://192.168.1.25:5000/api/sensor-data?sensorId=sensor${sensorId}&startDate=${startDate}&endDate=${endDate}`;
   ```
 - **ESP32 firmware**:  
   Update backend data POST URL.
   ```cpp
-  String url = "http://192.168.1.25:5001/api/sensor-data";
+  String url = "http://192.168.1.25:5000/api/sensor-data";
   ```
   *(Note: ESP32 Arduino core only supports HTTP by default. For HTTPS, you may need to install additional libraries for secure client connections.)*
 
